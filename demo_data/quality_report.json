@@ -1,0 +1,351 @@
+{
+  "findings": [
+    {
+      "check": "schema",
+      "classification": "schema",
+      "count": 0,
+      "message": "Required schema is present.",
+      "severity": "info"
+    },
+    {
+      "check": "timestamp_validity",
+      "classification": "timestamp",
+      "count": 0,
+      "message": "Timestamps must be parseable, non-null instants.",
+      "severity": "info"
+    },
+    {
+      "check": "duplicate_keys",
+      "classification": "duplicates_missing",
+      "count": 0,
+      "message": "Duplicate timestamp+region keys are reported; no rows were removed.",
+      "severity": "info"
+    },
+    {
+      "check": "cadence",
+      "classification": "cadence",
+      "count": 672,
+      "message": "Per-region cadence must be 15min; rows after irregular intervals are evidence.",
+      "severity": "warning"
+    },
+    {
+      "check": "missing_intervals",
+      "classification": "duplicates_missing",
+      "count": 672,
+      "message": "Estimated missing 15min intervals between observations.",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:consumption_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "consumption_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:nuclear_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "nuclear_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:wind_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "wind_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:solar_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "solar_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:hydro_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "hydro_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:gas_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "gas_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:coal_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "coal_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:oil_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "oil_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:bioenergy_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "bioenergy_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:imports_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "imports_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:exports_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "exports_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:net_imports_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "net_imports_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:co2_intensity_g_per_kwh",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "co2_intensity_g_per_kwh null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:total_production_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "total_production_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:renewable_production_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "renewable_production_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:renewable_share",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "renewable_share null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:fossil_production_mw",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "fossil_production_mw null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:fossil_share",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "fossil_share null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:hour",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "hour null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:day_of_week",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "day_of_week null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:month",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "month null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:is_weekend",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "is_weekend null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:is_holiday",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "is_holiday null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:consumption_lag_4",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "consumption_lag_4 null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:consumption_lag_12",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "consumption_lag_12 null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:consumption_lag_24",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "consumption_lag_24 null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:consumption_lag_96",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "consumption_lag_96 null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:consumption_rolling_4h",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "consumption_rolling_4h null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:consumption_rolling_24h",
+      "classification": "null_percentage",
+      "count": 0,
+      "message": "consumption_rolling_24h null fraction is 0.0% (warning above 5.0%).",
+      "severity": "info"
+    },
+    {
+      "check": "null_fraction:weather_city_count",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_city_count null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:weather_expected_city_count",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_expected_city_count null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:weather_population_coverage",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_population_coverage null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:weather_missing_cities",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_missing_cities null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:weather_temperature_c",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_temperature_c null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:weather_wind_speed_kmh",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_wind_speed_kmh null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:weather_cloud_cover_pct",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_cloud_cover_pct null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:weather_solar_radiation_wm2",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_solar_radiation_wm2 null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:weather_humidity_pct",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_humidity_pct null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "null_fraction:weather_source_timestamp_max",
+      "classification": "null_percentage",
+      "count": 351,
+      "message": "weather_source_timestamp_max null fraction is 52.2% (warning above 5.0%).",
+      "severity": "warning"
+    },
+    {
+      "check": "nonnegative_generation",
+      "classification": "physical_constraint",
+      "count": 0,
+      "message": "Generation values must be nonnegative.",
+      "severity": "info"
+    },
+    {
+      "check": "share_bounds",
+      "classification": "physical_constraint",
+      "count": 0,
+      "message": "Shares must be in [0, 1] and renewable+fossil cannot exceed 1.",
+      "severity": "info"
+    },
+    {
+      "check": "stale_latest_timestamp",
+      "classification": "freshness",
+      "count": 0,
+      "message": "Latest valid timestamp must be no older than 90min.",
+      "severity": "info"
+    },
+    {
+      "check": "extreme_values",
+      "classification": "extremes",
+      "count": 0,
+      "message": "Values exceed broad physical plausibility limits and require review.",
+      "severity": "info"
+    },
+    {
+      "check": "balance_residual",
+      "classification": "balance",
+      "count": 63,
+      "message": "Absolute supply-demand residual exceeds max(absolute tolerance, relative demand tolerance).",
+      "severity": "warning"
+    }
+  ],
+  "generated_at": "2025-01-01T00:00:00+00:00",
+  "passed": true,
+  "rows_checked": 673,
+  "suspicious_row_count": 4917
+}

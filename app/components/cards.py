@@ -90,6 +90,55 @@ def section_header(kicker: str, title: str, copy: str | None = None) -> None:
     )
 
 
+def story_steps(steps: list[tuple[str, str, str]]) -> None:
+    items = []
+    for index, (verb, title, detail) in enumerate(steps, start=1):
+        items.append(
+            f"""
+            <div class="ep-story-step">
+              <div class="ep-story-number">{index}</div>
+              <div class="ep-label">{html.escape(verb)}</div>
+              <div class="ep-title">{html.escape(title)}</div>
+              <div class="ep-detail">{html.escape(detail)}</div>
+            </div>
+            """
+        )
+    st.markdown(f'<div class="ep-story-grid">{"".join(items)}</div>', unsafe_allow_html=True)
+
+
+def source_badges(items: list[tuple[str, str]]) -> None:
+    badges = [
+        f'<span class="ep-source-badge"><span class="ep-source-dot"></span>{html.escape(label)}'
+        f'<small>{html.escape(detail)}</small></span>'
+        for label, detail in items
+    ]
+    st.markdown(
+        f"""
+        <div class="ep-source-wrap">
+          <div class="ep-label">Visible sources</div>
+          <div class="ep-source-row">{"".join(badges)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def viz_note(title: str, detail: str, *, source: str | None = None) -> None:
+    source_html = f'<span class="ep-viz-source">{html.escape(source)}</span>' if source else ""
+    st.markdown(
+        f"""
+        <div class="ep-viz-note">
+          <div>
+            <div class="ep-viz-title">{html.escape(title)}</div>
+            <div class="ep-viz-detail">{html.escape(detail)}</div>
+          </div>
+          {source_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def explanation_card(
     title: str,
     detail: str,
@@ -158,6 +207,22 @@ def driver_card(icon: str, title: str, detail: str, *, label: str = "Driver") ->
           <div class="ep-label">{html.escape(label)}</div>
           <div class="ep-title">{html.escape(title)}</div>
           <div class="ep-detail">{html.escape(detail)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def hackathon_footer(*, project: str, team: str, detail: str) -> None:
+    st.markdown(
+        f"""
+        <div class="ep-footer">
+          <div>
+            <div class="ep-label">Built for the hackathon</div>
+            <div class="ep-footer-title">{html.escape(project)}</div>
+            <div class="ep-detail">{html.escape(detail)}</div>
+          </div>
+          <div class="ep-footer-team">{html.escape(team)}</div>
         </div>
         """,
         unsafe_allow_html=True,

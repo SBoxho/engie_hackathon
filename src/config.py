@@ -13,6 +13,13 @@ load_dotenv(PROJECT_ROOT / ".env")
 @dataclass(frozen=True)
 class Settings:
     project_root: Path = PROJECT_ROOT
+    app_mode: str = os.getenv("APP_MODE", "demo").strip().lower()
+    demo_allow_external_api: bool = os.getenv("DEMO_ALLOW_EXTERNAL_API", "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
     odre_base_url: str = os.getenv(
         "ODRE_BASE_URL", "https://odre.opendatasoft.com/api/explore/v2.1"
     )
@@ -53,6 +60,54 @@ class Settings:
     @property
     def processed_dir(self) -> Path:
         return self.project_root / "data" / "processed"
+
+    @property
+    def is_demo_mode(self) -> bool:
+        return self.app_mode == "demo"
+
+    @property
+    def is_live_mode(self) -> bool:
+        return self.app_mode == "live"
+
+    @property
+    def app_mode_label(self) -> str:
+        return "Demo data mode" if self.is_demo_mode else "Live data mode"
+
+    @property
+    def demo_dir(self) -> Path:
+        return self.project_root / "demo_data"
+
+    @property
+    def demo_energy_path(self) -> Path:
+        return self.demo_dir / "energy_recent.parquet"
+
+    @property
+    def demo_weather_path(self) -> Path:
+        return self.demo_dir / "weather_national.parquet"
+
+    @property
+    def demo_ecowatt_path(self) -> Path:
+        return self.demo_dir / "ecowatt.parquet"
+
+    @property
+    def demo_quality_path(self) -> Path:
+        return self.demo_dir / "quality_report.json"
+
+    @property
+    def demo_model_evaluation_path(self) -> Path:
+        return self.demo_dir / "demand_model_evaluation.json"
+
+    @property
+    def demo_model_forecast_path(self) -> Path:
+        return self.demo_dir / "model_forecast.json"
+
+    @property
+    def demo_baseline_artifact_path(self) -> Path:
+        return self.demo_dir / "baseline_backtest.json"
+
+    @property
+    def demo_mood_artifact_path(self) -> Path:
+        return self.demo_dir / "mood_calibration.json"
 
     @property
     def energy_store_dir(self) -> Path:

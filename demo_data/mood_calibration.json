@@ -1,0 +1,1018 @@
+{
+  "fallback_order": [
+    "season_hour",
+    "season",
+    "local_hour",
+    "global",
+    "fixed"
+  ],
+  "fixed_thresholds": {
+    "co2_high": 80.0,
+    "co2_low": 40.0,
+    "consumption_high": 70000.0,
+    "fossil_high": 0.15,
+    "renewable_high": 0.35
+  },
+  "generated_at": "2026-06-17T00:00:00Z",
+  "min_sample": 30,
+  "precedence": [
+    "Carbon-heavy",
+    "Tense",
+    "Renewable-rich",
+    "Calm"
+  ],
+  "quantile_method": "pandas linear interpolation",
+  "quantiles": {
+    "co2_high": 0.75,
+    "co2_low": 0.25,
+    "consumption_high": 0.85,
+    "fossil_high": 0.75,
+    "renewable_high": 0.75
+  },
+  "schema_version": 1,
+  "season_definition": "meteorological",
+  "segments": [
+    {
+      "level": "season_hour",
+      "local_hour": 0,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 22.25,
+        "co2_low": 13.75,
+        "consumption_high": 44191.2,
+        "fossil_high": 0.029533346382985198,
+        "renewable_high": 0.23575815399950767
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 1,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 20.0,
+        "co2_low": 12.75,
+        "consumption_high": 40971.65,
+        "fossil_high": 0.02484217560264075,
+        "renewable_high": 0.21357038702734882
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 2,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 12.75,
+        "consumption_high": 39090.6,
+        "fossil_high": 0.021542621135199114,
+        "renewable_high": 0.20922269470953442
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 3,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 14.0,
+        "consumption_high": 36902.2,
+        "fossil_high": 0.02177296640874583,
+        "renewable_high": 0.19532456806728474
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 4,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 12.0,
+        "consumption_high": 36385.25,
+        "fossil_high": 0.02210566932567288,
+        "renewable_high": 0.18742593441606925
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 5,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 20.0,
+        "co2_low": 12.0,
+        "consumption_high": 37440.15,
+        "fossil_high": 0.023385521480345724,
+        "renewable_high": 0.19298588966444263
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 6,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 21.0,
+        "co2_low": 12.0,
+        "consumption_high": 40589.65,
+        "fossil_high": 0.02621598670082455,
+        "renewable_high": 0.22213128384917727
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 7,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 20.0,
+        "co2_low": 11.0,
+        "consumption_high": 43804.85,
+        "fossil_high": 0.02656087004954394,
+        "renewable_high": 0.2558094457795657
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 8,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 19.25,
+        "co2_low": 10.75,
+        "consumption_high": 46459.35,
+        "fossil_high": 0.025134489372227856,
+        "renewable_high": 0.28260656324921835
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 9,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 13.25,
+        "co2_low": 10.0,
+        "consumption_high": 47969.05,
+        "fossil_high": 0.011848011780025078,
+        "renewable_high": 0.29667061162189046
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 10,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 12.0,
+        "co2_low": 9.75,
+        "consumption_high": 48070.1,
+        "fossil_high": 0.007800583845968119,
+        "renewable_high": 0.3332621354243102
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 11,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 11.0,
+        "co2_low": 9.0,
+        "consumption_high": 48825.55,
+        "fossil_high": 0.006972562669943452,
+        "renewable_high": 0.37594812423703444
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 12,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 10.0,
+        "co2_low": 9.0,
+        "consumption_high": 50160.15,
+        "fossil_high": 0.0033130099776380964,
+        "renewable_high": 0.4159462259098306
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 13,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 10.0,
+        "co2_low": 9.0,
+        "consumption_high": 49762.8,
+        "fossil_high": 0.003204070874879717,
+        "renewable_high": 0.42937641481845057
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 14,
+      "sample": 13,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 10.0,
+        "co2_low": 9.0,
+        "consumption_high": 50256.4,
+        "fossil_high": 0.0032121142594929448,
+        "renewable_high": 0.4272022871623268
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 15,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 13.25,
+        "co2_low": 9.0,
+        "consumption_high": 48728.95,
+        "fossil_high": 0.005931647516073922,
+        "renewable_high": 0.41875199881729175
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 16,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 13.25,
+        "co2_low": 10.0,
+        "consumption_high": 47602.55,
+        "fossil_high": 0.005859369528982518,
+        "renewable_high": 0.39359020286126073
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 17,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 13.25,
+        "co2_low": 10.0,
+        "consumption_high": 47331.75,
+        "fossil_high": 0.006112052101824812,
+        "renewable_high": 0.37208590696192156
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 18,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 12.0,
+        "co2_low": 11.75,
+        "consumption_high": 49465.35,
+        "fossil_high": 0.008773155385464276,
+        "renewable_high": 0.34374044723263353
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 19,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 15.25,
+        "co2_low": 13.0,
+        "consumption_high": 50452.55,
+        "fossil_high": 0.01685918948969691,
+        "renewable_high": 0.30286494975575967
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 20,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 15.0,
+        "consumption_high": 48881.85,
+        "fossil_high": 0.02477512958560403,
+        "renewable_high": 0.27445909221040976
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 21,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 21.0,
+        "co2_low": 15.0,
+        "consumption_high": 46268.2,
+        "fossil_high": 0.02880313217837647,
+        "renewable_high": 0.25453565293182945
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 22,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 22.0,
+        "co2_low": 15.0,
+        "consumption_high": 46758.15,
+        "fossil_high": 0.031622964828940954,
+        "renewable_high": 0.26010455717164693
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 23,
+      "sample": 12,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 22.25,
+        "co2_low": 14.75,
+        "consumption_high": 46038.15,
+        "fossil_high": 0.03178708974731555,
+        "renewable_high": 0.25489285026479475
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 0,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 19.0,
+        "consumption_high": 54293.7,
+        "fossil_high": 0.03179257848071419,
+        "renewable_high": 0.3677367227136724
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 1,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 21.0,
+        "co2_low": 21.0,
+        "consumption_high": 53180.3,
+        "fossil_high": 0.03370008049464711,
+        "renewable_high": 0.3666365521458706
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 2,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 21.0,
+        "co2_low": 21.0,
+        "consumption_high": 53086.35,
+        "fossil_high": 0.03414343452778269,
+        "renewable_high": 0.3623145000909371
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 3,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 22.75,
+        "co2_low": 22.25,
+        "consumption_high": 51340.0,
+        "fossil_high": 0.0368875410217891,
+        "renewable_high": 0.3349475494671158
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 4,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 24.75,
+        "co2_low": 24.25,
+        "consumption_high": 48849.25,
+        "fossil_high": 0.038300450267429176,
+        "renewable_high": 0.29347187943241215
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 5,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 25.0,
+        "co2_low": 25.0,
+        "consumption_high": 47712.4,
+        "fossil_high": 0.038777472367065476,
+        "renewable_high": 0.29306490223820003
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 6,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 25.0,
+        "co2_low": 25.0,
+        "consumption_high": 47967.0,
+        "fossil_high": 0.038890579909215135,
+        "renewable_high": 0.28851795592270246
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 7,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 24.0,
+        "co2_low": 24.0,
+        "consumption_high": 48219.9,
+        "fossil_high": 0.03869346085440964,
+        "renewable_high": 0.28182220658594564
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 8,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 24.0,
+        "co2_low": 24.0,
+        "consumption_high": 48328.15,
+        "fossil_high": 0.037646937723087484,
+        "renewable_high": 0.32167780686715686
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 9,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 23.0,
+        "co2_low": 23.0,
+        "consumption_high": 48790.85,
+        "fossil_high": 0.03667608803557038,
+        "renewable_high": 0.34384170714528656
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 10,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 22.75,
+        "co2_low": 22.25,
+        "consumption_high": 50353.9,
+        "fossil_high": 0.035982666318384204,
+        "renewable_high": 0.34606166760160184
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 11,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 22.0,
+        "co2_low": 22.0,
+        "consumption_high": 51682.85,
+        "fossil_high": 0.03473718370398721,
+        "renewable_high": 0.3575042490324347
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 12,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 21.75,
+        "co2_low": 21.25,
+        "consumption_high": 52766.45,
+        "fossil_high": 0.034663466084139366,
+        "renewable_high": 0.3683361953540114
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 13,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 21.0,
+        "co2_low": 21.0,
+        "consumption_high": 52483.9,
+        "fossil_high": 0.03433615456868009,
+        "renewable_high": 0.3703402386081325
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 14,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 21.0,
+        "co2_low": 21.0,
+        "consumption_high": 50364.8,
+        "fossil_high": 0.03425287571462174,
+        "renewable_high": 0.3666660268522725
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 15,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 21.0,
+        "co2_low": 21.0,
+        "consumption_high": 49950.6,
+        "fossil_high": 0.034346600685495624,
+        "renewable_high": 0.3525544038857211
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 16,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 20.75,
+        "co2_low": 20.25,
+        "consumption_high": 49227.45,
+        "fossil_high": 0.033552917039267036,
+        "renewable_high": 0.3369472081944176
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 17,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 19.75,
+        "co2_low": 19.25,
+        "consumption_high": 50980.1,
+        "fossil_high": 0.03214438082089685,
+        "renewable_high": 0.3238670157398067
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 18,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 18.0,
+        "co2_low": 18.0,
+        "consumption_high": 54795.85,
+        "fossil_high": 0.030355711906681866,
+        "renewable_high": 0.3421817051523119
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 19,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 17.0,
+        "co2_low": 17.0,
+        "consumption_high": 56933.65,
+        "fossil_high": 0.02877784553579449,
+        "renewable_high": 0.3643371812014602
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 20,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 17.0,
+        "co2_low": 17.0,
+        "consumption_high": 56519.85,
+        "fossil_high": 0.028594872342588666,
+        "renewable_high": 0.37292613052186635
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 21,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 18.0,
+        "co2_low": 18.0,
+        "consumption_high": 54994.55,
+        "fossil_high": 0.02951235995690194,
+        "renewable_high": 0.37344584608684006
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 22,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 18.0,
+        "co2_low": 18.0,
+        "consumption_high": 53924.05,
+        "fossil_high": 0.029771761777928275,
+        "renewable_high": 0.3699578306940223
+      }
+    },
+    {
+      "level": "season_hour",
+      "local_hour": 23,
+      "sample": 2,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 18.0,
+        "co2_low": 18.0,
+        "consumption_high": 55306.95,
+        "fossil_high": 0.029547254980666952,
+        "renewable_high": 0.37279256315543374
+      }
+    },
+    {
+      "level": "season",
+      "local_hour": null,
+      "sample": 289,
+      "season": "summer",
+      "thresholds": {
+        "co2_high": 18.0,
+        "co2_low": 10.0,
+        "consumption_high": 48606.8,
+        "fossil_high": 0.02153840391062499,
+        "renewable_high": 0.35352874535271495
+      }
+    },
+    {
+      "level": "season",
+      "local_hour": null,
+      "sample": 48,
+      "season": "winter",
+      "thresholds": {
+        "co2_high": 23.0,
+        "co2_low": 18.75,
+        "consumption_high": 54886.549999999996,
+        "fossil_high": 0.0366526304886189,
+        "renewable_high": 0.36783738696737933
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 0,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 22.0,
+        "co2_low": 15.25,
+        "consumption_high": 45152.19999999999,
+        "fossil_high": 0.03179257848071419,
+        "renewable_high": 0.24632694063200888
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 1,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 20.0,
+        "co2_low": 14.25,
+        "consumption_high": 42116.499999999985,
+        "fossil_high": 0.02533763364945414,
+        "renewable_high": 0.21757189494810236
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 2,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 13.75,
+        "consumption_high": 40339.39999999999,
+        "fossil_high": 0.02158494795823673,
+        "renewable_high": 0.21060086185081348
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 3,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 14.25,
+        "consumption_high": 38103.39999999999,
+        "fossil_high": 0.021942868904711775,
+        "renewable_high": 0.19688293489477193
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 4,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 12.75,
+        "consumption_high": 37059.19999999999,
+        "fossil_high": 0.022397151508491666,
+        "renewable_high": 0.19119590624703728
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 5,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 20.0,
+        "co2_low": 12.75,
+        "consumption_high": 38301.69999999999,
+        "fossil_high": 0.02364719577186989,
+        "renewable_high": 0.1950757364256277
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 6,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 21.0,
+        "co2_low": 12.75,
+        "consumption_high": 41401.49999999999,
+        "fossil_high": 0.027677127201713017,
+        "renewable_high": 0.2312054074494332
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 7,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 20.75,
+        "co2_low": 12.0,
+        "consumption_high": 44479.2,
+        "fossil_high": 0.026985628546016934,
+        "renewable_high": 0.2649585373067872
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 8,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 20.0,
+        "co2_low": 12.0,
+        "consumption_high": 47028.1,
+        "fossil_high": 0.025916081653161723,
+        "renewable_high": 0.28841930421368234
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 9,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 14.75,
+        "co2_low": 10.25,
+        "consumption_high": 48279.4,
+        "fossil_high": 0.014207095139811301,
+        "renewable_high": 0.3112943503713005
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 10,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 12.0,
+        "co2_low": 10.0,
+        "consumption_high": 48690.35,
+        "fossil_high": 0.008343567998668162,
+        "renewable_high": 0.3439859265307372
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 11,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 11.0,
+        "co2_low": 9.25,
+        "consumption_high": 49578.0,
+        "fossil_high": 0.007076486180641521,
+        "renewable_high": 0.3684527651809836
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 12,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 10.0,
+        "co2_low": 9.0,
+        "consumption_high": 50747.45,
+        "fossil_high": 0.004159604413682067,
+        "renewable_high": 0.4045435801302003
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 13,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 10.0,
+        "co2_low": 9.0,
+        "consumption_high": 50082.15,
+        "fossil_high": 0.0032598699046648156,
+        "renewable_high": 0.41662265844285995
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 14,
+      "sample": 15,
+      "season": null,
+      "thresholds": {
+        "co2_high": 12.0,
+        "co2_low": 9.0,
+        "consumption_high": 50376.2,
+        "fossil_high": 0.004672006733482904,
+        "renewable_high": 0.41495075698122846
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 15,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 14.0,
+        "co2_low": 9.25,
+        "consumption_high": 49110.9,
+        "fossil_high": 0.006033039224411485,
+        "renewable_high": 0.41341014208444243
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 16,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 14.0,
+        "co2_low": 10.0,
+        "consumption_high": 47876.299999999996,
+        "fossil_high": 0.005923161853622764,
+        "renewable_high": 0.39301900224632896
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 17,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 14.0,
+        "co2_low": 10.25,
+        "consumption_high": 48043.5,
+        "fossil_high": 0.007676531588949166,
+        "renewable_high": 0.36980069316880976
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 18,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 12.0,
+        "co2_low": 12.0,
+        "consumption_high": 50090.899999999994,
+        "fossil_high": 0.009268278692464186,
+        "renewable_high": 0.3438360567987204
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 19,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 16.75,
+        "co2_low": 13.0,
+        "consumption_high": 51119.299999999996,
+        "fossil_high": 0.020212314614303277,
+        "renewable_high": 0.3101211464715099
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 20,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 15.5,
+        "consumption_high": 49741.399999999994,
+        "fossil_high": 0.025648763545801492,
+        "renewable_high": 0.282262277023776
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 21,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 21.0,
+        "co2_low": 15.75,
+        "consumption_high": 47267.04999999999,
+        "fossil_high": 0.029345058346916184,
+        "renewable_high": 0.2554975778063297
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 22,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 22.0,
+        "co2_low": 15.75,
+        "consumption_high": 47806.7,
+        "fossil_high": 0.0313804864146947,
+        "renewable_high": 0.26149122145964254
+      }
+    },
+    {
+      "level": "local_hour",
+      "local_hour": 23,
+      "sample": 14,
+      "season": null,
+      "thresholds": {
+        "co2_high": 22.0,
+        "co2_low": 15.75,
+        "consumption_high": 47015.49999999999,
+        "fossil_high": 0.031054306813984134,
+        "renewable_high": 0.2571800718781603
+      }
+    },
+    {
+      "level": "global",
+      "local_hour": null,
+      "sample": 337,
+      "season": null,
+      "thresholds": {
+        "co2_high": 19.0,
+        "co2_low": 11.0,
+        "consumption_high": 49657.2,
+        "fossil_high": 0.026088020842440243,
+        "renewable_high": 0.36279187336092766
+      }
+    }
+  ],
+  "source": {
+    "name": "RTE eCO2mix via ODR\u00c9 (partitioned-store:C:\\Users\\sebas\\Documents\\Code_Blocks\\engie_hackaton\\data\\processed\\eco2mix)",
+    "period_end": "2026-06-17T12:30:00Z",
+    "period_start": "2024-01-01T00:00:00Z",
+    "rows": 337
+  },
+  "timezone": "Europe/Paris"
+}

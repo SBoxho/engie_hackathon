@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.components.cards import message_box, metric_card, section_header, status_badge_html
+from app.components.cards import message_box, metric_card, section_header, status_badge_html, viz_note
 from app.components.charts import dark_chart_layout
 from app.components.energy_weather import build_energy_weather_timeline
 from app.components.layout import apply_theme
@@ -23,6 +23,7 @@ from src.config import settings
 from src.data_processing.clean_energy_mix import clean_energy_mix
 from src.data_processing.features import add_time_features
 from src.data_processing.storage import PartitionedParquetStore
+from src.demo_mode import demo_ecowatt, demo_energy, demo_model_evaluation, demo_mood_artifact
 from src.data_sources.ecowatt import load_cached_ecowatt
 from src.data_sources.rte_eco2mix import load_cached_eco2mix
 from src.models.load_shift_simulator import (
@@ -66,10 +67,14 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 
 def _mood_artifact() -> dict[str, Any] | None:
+    if settings.is_demo_mode:
+        return demo_mood_artifact() or None
     return _load_json(settings.mood_artifact_path) or None
 
 
 def _model_payload() -> dict[str, Any] | None:
+    if settings.is_demo_mode:
+        return demo_model_evaluation() or None
     path = settings.processed_dir / "demand_model" / "evaluation.json"
     return _load_json(path) or None
 
@@ -77,6 +82,12 @@ def _model_payload() -> dict[str, Any] | None:
 @st.cache_data(ttl=900, show_spinner=False)
 def load_local_energy() -> tuple[pd.DataFrame, str]:
     """Load local grid context without making a network request."""
+    if settings.is_demo_mode:
+        energy = demo_energy()
+        if not energy.empty:
+            return energy.sort_values("timestamp"), "Demo energy sample"
+        return pd.DataFrame(), "Offline demo grid profile"
+
     end = datetime.now(timezone.utc)
     start = end - timedelta(days=7)
     store = PartitionedParquetStore(settings.energy_store_dir)
@@ -100,6 +111,8 @@ def load_local_energy() -> tuple[pd.DataFrame, str]:
 
 @st.cache_data(ttl=900, show_spinner=False)
 def load_local_ecowatt(start: pd.Timestamp, end: pd.Timestamp) -> tuple[pd.DataFrame, str]:
+    if settings.is_demo_mode:
+        return demo_ecowatt(start, end)
     try:
         ecowatt = load_cached_ecowatt(timezone_name=settings.timezone)
     except (FileNotFoundError, OSError, ValueError):
@@ -267,6 +280,7 @@ section_header(
     "Move flexible use to an easier hour",
     "An educational simulator for seeing how timing, demand pressure, CO2 intensity, and EcoWatt context can change the energy-weather score.",
 )
+st.caption(settings.app_mode_label)
 message_box(
     "Educational simulator",
     "This is a playful approximation, not an exact real-world savings calculator. Appliance values are transparent demo assumptions unless replaced by ADEME ElecDom data.",
@@ -336,6 +350,11 @@ section_header(
     "Mini timeline",
     "24-hour pressure map",
     "Bars show the educational pressure score for each hour. Before and after markers show your move.",
+)
+viz_note(
+    "Before and after pressure",
+    "The bar labels and markers show whether the selected appliance moves away from a watch or tense hour and toward a lower-pressure window.",
+    source="Simulator context",
 )
 st.plotly_chart(timeline_chart(timeline, original_hour, shifted_hour), width="stretch")
 

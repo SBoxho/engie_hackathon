@@ -337,6 +337,149 @@ def build_theme_css() -> str:
       gap: var(--ep-space-sm);
       align-items: center;
     }}
+    .ep-story-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--ep-space-md);
+      margin: .25rem 0 var(--ep-space-xl);
+    }}
+    .ep-story-step {{
+      position: relative;
+      min-height: 184px;
+      background: linear-gradient(145deg, rgba(15, 28, 44, .96), rgba(11, 38, 55, .88));
+      border: 1px solid rgba(148, 163, 184, .24);
+      border-radius: var(--ep-radius-md);
+      box-shadow: var(--ep-card-shadow);
+      padding: var(--ep-space-lg);
+    }}
+    .ep-story-number {{
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--ep-radius-sm);
+      margin-bottom: var(--ep-space-md);
+      background: #e0f2fe;
+      color: #082f49;
+      font-weight: 900;
+      border: 1px solid rgba(224, 242, 254, .72);
+    }}
+    .ep-source-wrap {{
+      margin: .2rem 0 var(--ep-space-lg);
+    }}
+    .ep-source-row {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ep-space-sm);
+      margin-top: var(--ep-space-xs);
+    }}
+    .ep-source-badge {{
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      border: 1px solid rgba(203, 213, 225, .34);
+      border-radius: var(--ep-radius-pill);
+      padding: .42rem .72rem;
+      background: rgba(15, 28, 44, .72);
+      color: #f8fafc;
+      font-size: .84rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }}
+    .ep-source-badge small {{
+      color: #cbd5e1;
+      font-size: .74rem;
+      font-weight: 650;
+      margin-left: .1rem;
+    }}
+    .ep-source-dot {{
+      width: .56rem;
+      height: .56rem;
+      border-radius: var(--ep-radius-pill);
+      background: #2dd4bf;
+      box-shadow: 0 0 0 3px rgba(45, 212, 191, .14);
+      flex: 0 0 auto;
+    }}
+    .ep-viz-note {{
+      display: flex;
+      justify-content: space-between;
+      gap: var(--ep-space-md);
+      align-items: flex-start;
+      padding: .78rem .95rem;
+      margin: .35rem 0 .65rem;
+      background: rgba(15, 28, 44, .72);
+      border: 1px solid rgba(148, 163, 184, .2);
+      border-radius: var(--ep-radius-md);
+    }}
+    .ep-viz-title {{
+      color: var(--ep-text);
+      font-weight: 850;
+      line-height: 1.25;
+    }}
+    .ep-viz-detail {{
+      color: var(--ep-muted);
+      font-size: .92rem;
+      line-height: 1.42;
+      margin-top: .12rem;
+    }}
+    .ep-viz-source {{
+      display: inline-flex;
+      white-space: nowrap;
+      color: #bae6fd;
+      border: 1px solid rgba(125, 211, 252, .32);
+      background: rgba(14, 116, 144, .16);
+      border-radius: var(--ep-radius-pill);
+      padding: .24rem .55rem;
+      font-size: .75rem;
+      font-weight: 850;
+    }}
+    .ep-why-grid {{
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--ep-space-md);
+      margin-bottom: var(--ep-space-lg);
+    }}
+    .ep-why-item {{
+      background: rgba(15, 28, 44, .78);
+      border: 1px solid rgba(148, 163, 184, .2);
+      border-radius: var(--ep-radius-md);
+      padding: var(--ep-space-lg);
+      min-height: 142px;
+    }}
+    .ep-how-grid {{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ep-space-md);
+      margin: var(--ep-space-md) 0;
+    }}
+    .ep-how-item {{
+      background: rgba(7, 17, 29, .42);
+      border: 1px solid rgba(148, 163, 184, .18);
+      border-radius: var(--ep-radius-md);
+      padding: var(--ep-space-md);
+    }}
+    .ep-footer {{
+      display: flex;
+      justify-content: space-between;
+      gap: var(--ep-space-lg);
+      align-items: center;
+      margin: 2rem 0 .5rem;
+      padding: var(--ep-space-xl);
+      border-top: 1px solid rgba(148, 163, 184, .24);
+      background: rgba(7, 17, 29, .5);
+    }}
+    .ep-footer-title {{
+      color: var(--ep-text);
+      font-size: 1.28rem;
+      font-weight: 850;
+      margin: .2rem 0 .28rem;
+    }}
+    .ep-footer-team {{
+      color: #e0f2fe;
+      font-weight: 850;
+      text-align: right;
+    }}
     @media (max-width: 760px) {{
       .block-container {{
         padding-left: 1rem;
@@ -351,6 +494,22 @@ def build_theme_css() -> str:
       }}
       .ep-metric-card, .ep-driver-card, .ep-horizon-card {{
         min-height: auto;
+      }}
+      .ep-story-grid, .ep-why-grid, .ep-how-grid {{
+        grid-template-columns: 1fr;
+      }}
+      .ep-story-step {{
+        min-height: auto;
+      }}
+      .ep-viz-note, .ep-footer {{
+        flex-direction: column;
+        align-items: stretch;
+      }}
+      .ep-viz-source {{
+        width: fit-content;
+      }}
+      .ep-footer-team {{
+        text-align: left;
       }}
     }}
     </style>

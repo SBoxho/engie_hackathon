@@ -8,7 +8,9 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+from app.components.cards import viz_note
 from app.components.layout import apply_theme
+from src.config import settings
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -28,12 +30,14 @@ def load_artifact(path: str) -> dict:
 apply_theme()
 
 st.title("Demand baselines")
+st.caption(settings.app_mode_label)
 st.caption(
     "These are simple rule-based reference forecasts—not AI or machine-learning models. "
     "They show the minimum performance a future model should beat."
 )
 
-artifact_path = st.text_input("Backtest artifact", str(DEFAULT_ARTIFACT))
+default_artifact = settings.demo_baseline_artifact_path if settings.is_demo_mode else DEFAULT_ARTIFACT
+artifact_path = st.text_input("Backtest artifact", str(default_artifact))
 try:
     payload = load_artifact(artifact_path)
 except (OSError, ValueError, json.JSONDecodeError) as exc:
@@ -88,6 +92,11 @@ else:
     chart_data = chart_data.melt("target", var_name="series", value_name="MW")
     figure = px.line(chart_data, x="target", y="MW", color="series")
     figure.update_layout(xaxis_title=None, legend_title=None, hovermode="x unified")
+    viz_note(
+        "Actual demand versus simple baseline",
+        "This chart shows whether a transparent reference rule follows the real demand curve closely enough to be a credible benchmark.",
+        source="Backtest artifact",
+    )
     st.plotly_chart(figure, width="stretch")
 
 st.caption(

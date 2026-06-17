@@ -5,11 +5,12 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
 
-from app.components.cards import explanation_card, metric_card, section_header, status_badge
+from app.components.cards import explanation_card, metric_card, section_header, status_badge, viz_note
 from app.components.charts import MIX_COLUMNS
 from app.components.layout import apply_theme
 from app.components.regional_map import regional_demand_choropleth
 from src.config import settings
+from src.demo_mode import external_api_enabled, mode_badge_color
 from src.data_sources.rte_eco2mix_regional import (
     RegionalEco2MixError,
     fallback_department_geojson,
@@ -27,6 +28,8 @@ apply_theme()
 
 @st.cache_data(ttl=900, show_spinner=False)
 def load_regional_data(hours: int) -> tuple[pd.DataFrame, str, bool]:
+    if settings.is_demo_mode and not external_api_enabled():
+        return demo_regional_snapshot(), "Demo regional snapshot, offline fallback", True
     end = datetime.now(timezone.utc)
     start = end - timedelta(hours=hours)
     try:
@@ -42,6 +45,8 @@ def load_regional_data(hours: int) -> tuple[pd.DataFrame, str, bool]:
 
 @st.cache_data(ttl=86400, show_spinner=False)
 def load_regions() -> tuple[dict, str, bool]:
+    if settings.is_demo_mode and not external_api_enabled():
+        return fallback_region_geojson(), "Bundled simplified France region boundaries", True
     try:
         return load_region_geojson(), "Official French administrative regions via API Geo", False
     except (RegionalEco2MixError, AttributeError, TypeError, ValueError):
@@ -130,6 +135,7 @@ st.markdown(
 regional, data_status, demo_data = load_regional_data(settings.history_hours)
 regions_geojson, geo_status, demo_geo = load_regions()
 department_geojson = load_departments()
+status_badge(settings.app_mode_label, mode_badge_color())
 status_badge(data_status, "grey" if demo_data else "blue")
 status_badge(geo_status, "grey" if demo_geo else "blue")
 
@@ -146,6 +152,11 @@ section_header(
 
 left, right = st.columns([1.65, 1], gap="large")
 with left:
+    viz_note(
+        "Regional pressure map",
+        "This map compares regions against the current regional peak. Use the labels and hover details to discuss demand, production, and renewable share without relying only on color.",
+        source="RTE / ODRE + data.gouv.fr",
+    )
     event = st.plotly_chart(
         regional_demand_choropleth(regional, regions_geojson, department_geojson),
         key="regional_demand_map",

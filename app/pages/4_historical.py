@@ -6,10 +6,12 @@ import pandas as pd
 import streamlit as st
 
 from app.components.charts import consumption_chart, production_area_chart
+from app.components.cards import viz_note
 from app.components.layout import apply_theme
 from src.config import settings
 from src.data_processing.features import add_time_features
 from src.data_processing.storage import PartitionedParquetStore
+from src.demo_mode import demo_energy, external_api_enabled
 from src.data_sources.rte_eco2mix_historical import (
     MAX_RANGE_DAYS,
     fetch_historical,
@@ -19,6 +21,7 @@ from src.data_sources.rte_eco2mix_historical import (
 apply_theme()
 
 st.title("Historical national grid")
+st.caption(settings.app_mode_label)
 st.caption("Consolidated RTE éCO2mix data via the official ODRÉ open-data API")
 
 today = date.today()
@@ -35,18 +38,23 @@ def _fetch(start_value: date, end_value: date) -> pd.DataFrame:
 
 
 frame: pd.DataFrame | None = None
-if st.button("Fetch official history", type="primary"):
+fetch_disabled = settings.is_demo_mode and not external_api_enabled()
+if st.button("Fetch official history", type="primary", disabled=fetch_disabled):
     try:
         with st.spinner("Fetching ODRÉ history…"):
             frame = _fetch(start, end)
     except Exception as exc:
         st.error(str(exc))
 else:
-    try:
-        frame = load_cached_historical()
-        st.info("Showing the latest immutable local snapshot. Choose dates and fetch to refresh.")
-    except FileNotFoundError:
-        st.info(f"Choose an interval of at most {MAX_RANGE_DAYS} days, then fetch official history.")
+    if fetch_disabled:
+        frame = demo_energy()
+        st.info("Showing the bundled demo sample. Set `APP_MODE=live` to fetch official history.")
+    else:
+        try:
+            frame = load_cached_historical()
+            st.info("Showing the latest immutable local snapshot. Choose dates and fetch to refresh.")
+        except FileNotFoundError:
+            st.info(f"Choose an interval of at most {MAX_RANGE_DAYS} days, then fetch official history.")
 
 if frame is not None:
     if frame.empty:
@@ -57,7 +65,17 @@ if frame is not None:
         first.metric("Rows", f"{len(frame):,}")
         second.metric("Latest demand", f"{newest['consumption_mw']:,.0f} MW")
         third.metric("Latest CO₂ intensity", f"{newest['co2_intensity_g_per_kwh']:,.0f} g/kWh")
+        viz_note(
+            "Historical demand curve",
+            "Use this chart to compare daily peaks, overnight troughs, and the overall size of the selected period.",
+            source="RTE / ODRE",
+        )
         st.plotly_chart(consumption_chart(frame), width="stretch")
+        viz_note(
+            "Historical generation mix",
+            "This stacked view shows which production sources supplied the system during the selected window.",
+            source="RTE / ODRE",
+        )
         st.plotly_chart(production_area_chart(frame), width="stretch")
         st.download_button(
             "Download standardized CSV",

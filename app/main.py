@@ -18,13 +18,18 @@ from app.components.charts import consumption_chart, mix_donut, production_area_
 from app.components.cards import (
     driver_card,
     explanation_card,
+    hackathon_footer,
     horizon_forecast_card,
     message_box,
     metric_card,
     section_header,
+    source_badges,
     status_badge,
+    story_steps,
+    viz_note,
 )
 from app.components.data_quality import render_data_quality
+from app.components.deployment_health import render_deployment_health
 from app.components.energy_weather import (
     build_energy_weather_timeline,
     energy_weather_heatmap,
@@ -40,6 +45,15 @@ from src.data_processing.storage import PartitionedParquetStore
 from src.data_processing.weather_features import join_energy_weather
 from src.data_sources.ecowatt import load_ecowatt_window, source_attribution, status_at
 from src.data_sources.rte_eco2mix import Eco2MixError, fetch_eco2mix, load_cached_eco2mix
+from src.demo_mode import (
+    demo_ecowatt,
+    demo_energy,
+    demo_model_evaluation,
+    demo_mood_artifact,
+    demo_weather,
+    external_api_enabled,
+    mode_badge_color,
+)
 from src.models.mood_calibration import FIXED_THRESHOLDS, classify_mood
 
 st.set_page_config(page_title="Energy Pulse France", page_icon=":zap:", layout="wide")
@@ -49,6 +63,12 @@ apply_theme()
 @st.cache_data(ttl=900, show_spinner=False)
 def load_data(hours: int) -> tuple[pd.DataFrame, str]:
     """Prefer a fresh official observation, then explicit local fallbacks."""
+    if settings.is_demo_mode and not external_api_enabled():
+        demo = demo_energy()
+        if not demo.empty:
+            return demo, "Demo energy sample"
+        return pd.DataFrame(), "Demo energy sample unavailable"
+
     end = datetime.now(timezone.utc)
     start = end - timedelta(hours=hours)
     try:
@@ -66,6 +86,8 @@ def load_data(hours: int) -> tuple[pd.DataFrame, str]:
 
 @st.cache_data(ttl=900, show_spinner=False)
 def load_weather(start: pd.Timestamp, end: pd.Timestamp) -> pd.DataFrame:
+    if settings.is_demo_mode and not external_api_enabled():
+        return demo_weather(start, end)
     if not settings.weather_features_path.exists():
         return pd.DataFrame()
     weather = pd.read_parquet(settings.weather_features_path)
@@ -74,11 +96,15 @@ def load_weather(start: pd.Timestamp, end: pd.Timestamp) -> pd.DataFrame:
 
 @st.cache_data(ttl=900, show_spinner=False)
 def load_ecowatt(start: pd.Timestamp, end: pd.Timestamp) -> tuple[pd.DataFrame, str]:
+    if settings.is_demo_mode and not external_api_enabled():
+        return demo_ecowatt(start, end)
     return load_ecowatt_window(start, end, timezone_name=settings.timezone)
 
 
 @st.cache_data(ttl=900, show_spinner=False)
 def load_model_evaluation() -> dict[str, Any]:
+    if settings.is_demo_mode:
+        return demo_model_evaluation()
     path = settings.processed_dir / "demand_model" / "evaluation.json"
     if not path.exists():
         return {}
@@ -86,6 +112,10 @@ def load_model_evaluation() -> dict[str, Any]:
 
 
 def mood_artifact() -> tuple[dict[str, Any], str]:
+    if settings.is_demo_mode:
+        artifact = demo_mood_artifact()
+        if artifact:
+            return artifact, "demo calibration"
     if settings.mood_artifact_path.exists():
         return json.loads(settings.mood_artifact_path.read_text(encoding="utf-8")), "calibrated"
     return {
@@ -294,12 +324,78 @@ def render_forecast_check(payload: dict[str, Any]) -> None:
     )
 
 
+def render_how_it_works() -> None:
+    with st.expander("How it works: data, model, explainability, limitations", expanded=False):
+        st.markdown(
+            """
+            <div class="ep-how-grid">
+              <div class="ep-how-item">
+                <div class="ep-label">Data</div>
+                <div class="ep-title">Official grid signals plus context</div>
+                <div class="ep-detail">RTE/ODRE electricity observations anchor the app. Open-Meteo weather features, EcoWatt status, public catalog metadata, and transparent appliance assumptions add context.</div>
+              </div>
+              <div class="ep-how-item">
+                <div class="ep-label">Model</div>
+                <div class="ep-title">Measured patterns before black boxes</div>
+                <div class="ep-detail">The 24-hour outlook uses the best available signal: fresh model points, RTE forecast fields when present, or recent same-hour behavior. Every fallback is shown.</div>
+              </div>
+              <div class="ep-how-item">
+                <div class="ep-label">Explainability</div>
+                <div class="ep-title">Status labels explain the action</div>
+                <div class="ep-detail">Each hour is labeled Comfortable, Watch, Tense, or Low-carbon opportunity. Hover details show demand, CO2 intensity, EcoWatt, and the source used.</div>
+              </div>
+              <div class="ep-how-item">
+                <div class="ep-label">Limitations</div>
+                <div class="ep-title">Decision support, not operations</div>
+                <div class="ep-detail">This is a hackathon demo and public education tool. It is not an RTE operational forecast, tariff signal, or verified carbon accounting method.</div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_why_it_matters() -> None:
+    st.markdown(
+        """
+        <div class="ep-why-grid">
+          <div class="ep-why-item">
+            <div class="ep-label">Demand peaks</div>
+            <div class="ep-title">Small timing choices add up</div>
+            <div class="ep-detail">Even flexible household loads matter when many people move them away from evening pressure.</div>
+          </div>
+          <div class="ep-why-item">
+            <div class="ep-label">Grid tension</div>
+            <div class="ep-title">Not every hour has the same risk</div>
+            <div class="ep-detail">EcoWatt and demand pressure make tense hours visible before the user chooses an action.</div>
+          </div>
+          <div class="ep-why-item">
+            <div class="ep-label">Low-carbon timing</div>
+            <div class="ep-title">Cleaner hours should be legible</div>
+            <div class="ep-detail">The app separates demand pressure from CO2 intensity so the best shift window is easier to explain.</div>
+          </div>
+          <div class="ep-why-item">
+            <div class="ep-label">Citizen action</div>
+            <div class="ep-title">From signal to behavior</div>
+            <div class="ep-detail">The simulator turns a grid signal into a concrete choice: when to run flexible appliances.</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 try:
     with st.spinner("Connecting to the French grid data feed..."):
         data, source_status = load_data(settings.history_hours)
 except (Eco2MixError, FileNotFoundError, ValueError) as exc:
     st.error(f"No official energy data is available yet: {exc}")
     st.code("python -m scripts.update_data --hours 72")
+    st.stop()
+
+if data.empty:
+    st.error("No demo energy sample is available. Export the demo bundle before deployment.")
+    st.code("python -m scripts.export_demo_bundle")
     st.stop()
 
 data = data.sort_values("timestamp")
@@ -330,16 +426,74 @@ confidence_label, confidence_detail, confidence_status = confidence_parts(energy
 shift_status = "Unknown" if energy_summary["shift"].startswith("None visible") else "Low-carbon opportunity"
 avoid_status = "Comfortable" if energy_summary["avoid"].startswith("None visible") else "Tense"
 
+render_deployment_health(
+    data=data,
+    source_status=source_status,
+    weather=weather,
+    ecowatt=ecowatt,
+    model_payload=model_payload,
+    calibration_status=calibration_status,
+)
+
 st.markdown('<div class="ep-eyebrow">France electricity weather</div>', unsafe_allow_html=True)
 st.markdown('<div class="ep-hero">Energy Pulse France</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="ep-subtitle">A fast read on French electricity demand, carbon intensity, weather pressure, and the hours ahead.</div>',
+    '<div class="ep-subtitle">A three-minute jury story: observe the live grid, understand what is moving demand, and act by shifting flexible use to better hours.</div>',
     unsafe_allow_html=True,
 )
 status_badge(source_status, "blue")
+status_badge(settings.app_mode_label, mode_badge_color())
 status_badge(ecowatt_source_status, "blue" if not ecowatt.empty else "grey")
+source_badges(
+    [
+        ("RTE / ODRÉ", "eco2mix + EcoWatt"),
+        ("Open-Meteo", "weather context"),
+        ("ADEME", "appliance assumptions"),
+        ("data.gouv.fr", "public catalog"),
+    ]
+)
+if settings.is_demo_mode:
+    message_box(
+        "Demo data mode is active",
+        "This public deployment is using the committed demo_data bundle and does not call external APIs unless DEMO_ALLOW_EXTERNAL_API=1 is set.",
+        kind="info",
+    )
 
-section_header("Live signal", "Current grid pulse")
+section_header("Demo narrative", "Observe, understand, act")
+story_steps(
+    [
+        (
+            "Observe",
+            "What is the grid doing?",
+            "Start with live demand, CO2 intensity, EcoWatt, weather, and the current grid mood.",
+        ),
+        (
+            "Understand",
+            "Why is demand changing?",
+            "Connect the pulse to weather, recent demand pressure, generation mix, and calibrated thresholds.",
+        ),
+        (
+            "Act",
+            "When should we shift usage?",
+            "Use the next 24 hours to spot easier and lower-carbon windows for flexible appliances.",
+        ),
+    ]
+)
+
+render_how_it_works()
+
+section_header(
+    "Why it matters",
+    "From grid tension to citizen action",
+    "The demo links national electricity signals to choices that a household, campus, or city can understand quickly.",
+)
+render_why_it_matters()
+
+section_header(
+    "Observe",
+    "Current grid pulse",
+    "These cards answer the first jury question: what is happening on the French electricity system right now?",
+)
 cols = st.columns(6)
 with cols[0]:
     metric_card("Demand", format_mw(float(latest["consumption_mw"])), "How much power France is using now.", icon="kW")
@@ -366,9 +520,9 @@ with cols[5]:
     metric_card("Last update", f"{local_time:%H:%M}", f"{local_time:%d %b %Y}, Europe/Paris.", icon="Now")
 
 section_header(
-    "Next 24h",
+    "Act",
     "24h Energy Weather",
-    "A public-friendly outlook for normal use, flexible shifting, and careful hours.",
+    "A public-friendly outlook for normal use, flexible shifting, and careful hours. Text labels are shown on the chart so the meaning is not color-only.",
 )
 summary_cols = st.columns(3)
 with summary_cols[0]:
@@ -392,6 +546,11 @@ with summary_cols[2]:
         confidence_detail,
         status=confidence_status,
     )
+viz_note(
+    "24-hour energy weather map",
+    "Read across the hours: the app row combines demand and CO2 context; the EcoWatt row shows the official electricity-weather signal when available.",
+    source="RTE / ODRE + model context",
+)
 st.plotly_chart(energy_weather_heatmap(energy_weather.timeline), width="stretch")
 message_box(
     "How to read this",
@@ -402,6 +561,11 @@ message_box(
     kind="info",
 )
 with st.expander("Advanced values behind the 24h Energy Weather", expanded=False):
+    viz_note(
+        "Technical values behind each hour",
+        "This table exposes the exact demand, CO2, threshold, model, and source fields used to create the public labels.",
+        source="Traceability",
+    )
     advanced_columns = [
         "target",
         "status",
@@ -424,7 +588,11 @@ with st.expander("Advanced values behind the 24h Energy Weather", expanded=False
     st.dataframe(energy_weather.timeline[available_columns], width="stretch", hide_index=True)
     st.json(energy_weather.metadata)
 
-section_header("Why", "What is moving the pulse?")
+section_header(
+    "Understand",
+    "What is moving the pulse?",
+    "These drivers explain the live mood in plain language before anyone has to inspect the raw data.",
+)
 history_quantiles = data["consumption_mw"].quantile([0.25, 0.60, 0.85])
 current_pressure, _, _ = demand_pressure(float(latest["consumption_mw"]), history_quantiles)
 renewable_share = float(latest.get("renewable_share", 0))
@@ -480,11 +648,26 @@ with st.expander("Advanced / Data Science", expanded=False):
     left, right = st.columns([1.35, 1])
     with left:
         st.subheader("Demand pulse detail")
+        viz_note(
+            "Recent demand trend",
+            "This line shows how national consumption has moved over the recent window, making peaks and recovery periods visible.",
+            source="RTE / ODRE",
+        )
         st.plotly_chart(consumption_chart(data), width="stretch")
         st.subheader("What powers France")
+        viz_note(
+            "Generation mix over time",
+            "The stacked area chart shows which production sources are contributing as demand changes.",
+            source="RTE / ODRE",
+        )
         st.plotly_chart(production_area_chart(data), width="stretch")
     with right:
         st.subheader("Latest energy mix")
+        viz_note(
+            "Current production share",
+            "The donut summarizes the latest measured mix so the CO2 signal can be discussed separately from demand.",
+            source="RTE / ODRE",
+        )
         st.plotly_chart(mix_donut(latest), width="stretch")
 
     if weather.empty:
@@ -510,4 +693,9 @@ st.caption(
     f"[ODRE]({sources['current_history']}) / [data.gouv.fr]({sources['data_gouv']}); "
     f"legacy EcoWatt via [ODRE]({sources['legacy_history']}); optional live EcoWatt via "
     f"[RTE API]({sources['rte_live_api']})."
+)
+hackathon_footer(
+    project="Energy Pulse France",
+    team="ENGIE hackathon team",
+    detail="Streamlit demo for electricity-weather awareness, explainable demand context, and practical load shifting.",
 )

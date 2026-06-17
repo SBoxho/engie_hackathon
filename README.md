@@ -22,16 +22,118 @@ Detailed source contracts and limitations are in `docs/`.
 
 ## Install
 
-Python 3.11 or newer is recommended.
+Python 3.11 or newer is recommended. A fresh clone can run the public demo without private files, raw API caches, model binaries, or credentials.
 
 ```powershell
+git clone <your-fork-or-repo-url>
+cd engie_hackaton
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-Copy-Item .env.example .env
+python run_app.py
 ```
 
-No credential is needed for RTE/ODRÉ or Open-Meteo. `ENTSOE_API_TOKEN` remains optional and is not used by this pipeline.
+For local development, tests, and model training, install the extra developer dependencies:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+```
+
+No credential is needed for RTE/ODRE or Open-Meteo. Optional secrets are only used if you choose to enable live integrations.
+
+## Demo and deployment mode
+
+The app defaults to `APP_MODE=demo` so a clean clone can boot from the small committed `demo_data/` bundle without raw datasets, trained model binaries, or network calls. The UI shows **Demo data mode** when this path is active. Use `APP_MODE=live` for the normal fetch/cache/pipeline behavior.
+
+```powershell
+# Reliable hackathon/demo run: uses only demo_data/
+$env:APP_MODE="demo"
+$env:DEMO_ALLOW_EXTERNAL_API="0"
+python run_app.py
+
+# Full local/live run: uses existing data pipelines and live fallbacks.
+$env:APP_MODE="live"
+python run_app.py
+```
+
+Demo mode never calls external APIs unless `DEMO_ALLOW_EXTERNAL_API=1` is explicitly set. Keep that value at `0` for Streamlit Community Cloud, Hugging Face Spaces, and hackathon judging.
+
+To refresh the committed demo bundle after regenerating local processed artifacts:
+
+```powershell
+python -m scripts.export_demo_bundle
+```
+
+The exporter writes only small safe artifacts to `demo_data/`: a 7-14 day energy sample, trimmed demand-model evaluation, one model forecast artifact, data-quality report, optional EcoWatt sample, optional weather sample, baseline sample, and mood calibration. It does not copy raw API payloads or `demand_hgb_model.pkl`.
+
+## Public Deployment
+
+### Streamlit Community Cloud
+
+1. Push this repository to GitHub with `demo_data/`, `.streamlit/config.toml`, `requirements.txt`, and `app/main.py` committed.
+2. In Streamlit Community Cloud, create a new app from the GitHub repository.
+3. Set the main file path to:
+
+```text
+app/main.py
+```
+
+4. Set environment variables or app secrets:
+
+```text
+APP_MODE="demo"
+DEMO_ALLOW_EXTERNAL_API="0"
+ENERGY_PULSE_TIMEZONE="Europe/Paris"
+ENERGY_PULSE_HISTORY_HOURS="72"
+```
+
+5. Deploy. The sidebar should show `Ready for public demo` or only optional missing artifacts.
+
+No Streamlit secrets are required for the default demo deployment. Do not upload `.env`, `data/raw/`, `data/processed/`, or local virtual environments.
+
+### Hugging Face Spaces Backup
+
+1. Create a new Hugging Face Space with the Streamlit SDK.
+2. Add this repository as the Space content, or mirror the GitHub repository into the Space.
+3. Use `requirements.txt` as the Space dependency file.
+4. Set `app/main.py` as the Streamlit entrypoint. If a custom command is needed, use:
+
+```bash
+streamlit run app/main.py --server.port 7860 --server.address 0.0.0.0
+```
+
+5. Add the same environment variables:
+
+```text
+APP_MODE=demo
+DEMO_ALLOW_EXTERNAL_API=0
+ENERGY_PULSE_TIMEZONE=Europe/Paris
+ENERGY_PULSE_HISTORY_HOURS=72
+```
+
+### Expected Environment Variables
+
+| Variable | Required | Purpose |
+|---|---:|---|
+| `APP_MODE` | No | `demo` for public deterministic demo, `live` for fetch/cache behavior. Defaults to `demo`. |
+| `DEMO_ALLOW_EXTERNAL_API` | No | Set to `0` for offline demo deployments. |
+| `ENERGY_PULSE_TIMEZONE` | No | Display timezone. Defaults to `Europe/Paris`. |
+| `ENERGY_PULSE_HISTORY_HOURS` | No | Recent window for live/cached data. Defaults to `72`. |
+| `ODRE_BASE_URL` | No | Override the public ODRE API base URL for testing. |
+| `OPEN_METEO_BASE_URL` | No | Override the Open-Meteo endpoint for testing. |
+| `RTE_ECOWATT_API_TOKEN` | No | Optional live EcoWatt token. Not needed for demo. |
+| `ENTSOE_API_TOKEN` | No | Reserved for future ENTSO-E integration. Not used by this app. |
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| App says demo energy sample is unavailable | Commit or regenerate `demo_data/energy_recent.parquet` with `python -m scripts.export_demo_bundle`. |
+| Sidebar health shows required artifacts missing | Verify `demo_data/manifest.json`, `quality_report.json`, `baseline_backtest.json`, `demand_model_evaluation.json`, and `mood_calibration.json` are in the repository. |
+| Streamlit Cloud fails during dependency install | Use `requirements.txt`, not `requirements-dev.txt`; the latter is only for local tests and training. |
+| Hosted app unexpectedly calls APIs | Set `APP_MODE=demo` and `DEMO_ALLOW_EXTERNAL_API=0`, then clear Streamlit's cache or redeploy. |
+| Demand-model page has no predictions | Refresh the demo bundle after creating `data/processed/demand_model/evaluation.json`. The public demo does not require a `.pkl` model file. |
+| Live mode has no data | Run `python -m scripts.update_data --hours 72` locally, or switch back to `APP_MODE=demo` for public judging. |
 
 ## Reproduce the pipeline
 
@@ -80,6 +182,7 @@ Use `python -m scripts.update_data --offline` to process the newest immutable ne
 - `data/processed/demand_model/demand_hgb_model.pkl`: generated scikit-learn model bundle; ignored by Git.
 - `data/processed/demand_model/evaluation.json`: model-versus-baseline metrics and prediction records for untouched chronological test periods.
 - `data/processed/mood_calibration.json`: quantile thresholds, source period, sample sizes, fallback metadata, and generation time.
+- `demo_data/`: deployment-safe demo artifacts used when `APP_MODE=demo`; tracked in Git and independent of raw caches or trained model binaries.
 
 The standardized electricity schema includes explicit UTC timestamps, region, consumption, generation by source, imports/exports, source CO₂ intensity, total/renewable/fossil production, and renewable/fossil shares. Suspicious records remain available as quality evidence; quality checks do not silently clean them away.
 

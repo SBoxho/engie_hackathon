@@ -1,0 +1,43 @@
+{
+  "forecasts": [
+    {
+      "day_naive_predicted_mw": 65745.0,
+      "horizon_hours": 1,
+      "model_predicted_mw": 63880.874577508,
+      "origin_timestamp": "2024-12-31T22:30:00Z",
+      "persistence_predicted_mw": 65159.0,
+      "target_timestamp": "2024-12-31T23:30:00Z",
+      "week_naive_predicted_mw": 55826.0
+    },
+    {
+      "day_naive_predicted_mw": 65745.0,
+      "horizon_hours": 3,
+      "model_predicted_mw": 62731.1310046307,
+      "origin_timestamp": "2024-12-31T20:30:00Z",
+      "persistence_predicted_mw": 63946.0,
+      "target_timestamp": "2024-12-31T23:30:00Z",
+      "week_naive_predicted_mw": 55826.0
+    },
+    {
+      "day_naive_predicted_mw": 65745.0,
+      "horizon_hours": 6,
+      "model_predicted_mw": 59987.350694352,
+      "origin_timestamp": "2024-12-31T17:30:00Z",
+      "persistence_predicted_mw": 70016.0,
+      "target_timestamp": "2024-12-31T23:30:00Z",
+      "week_naive_predicted_mw": 55826.0
+    },
+    {
+      "day_naive_predicted_mw": 65745.0,
+      "horizon_hours": 24,
+      "model_predicted_mw": 59983.2712103534,
+      "origin_timestamp": "2024-12-30T23:30:00Z",
+      "persistence_predicted_mw": 65745.0,
+      "target_timestamp": "2024-12-31T23:30:00Z",
+      "week_naive_predicted_mw": 55826.0
+    }
+  ],
+  "generated_at": "2026-06-17T22:08:02.133445+00:00",
+  "schema_version": 1,
+  "source": "trimmed local demand model evaluation"
+}

@@ -1,3 +1,11 @@
+[server]
+headless = true
+enableXsrfProtection = true
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = true
+
 [theme]
 base = "dark"
 primaryColor = "#14b8a6"
@@ -5,3 +13,6 @@ backgroundColor = "#07111d"
 secondaryBackgroundColor = "#0f1c2c"
 textColor = "#f4f8fb"
 font = "sans serif"
+baseFontSize = 16
+chartCategoricalColors = ["#14b8a6", "#60a5fa", "#f59e0b", "#ef4444", "#a78bfa", "#22c55e"]
+chartSequentialColors = ["#07111d", "#0f766e", "#14b8a6", "#99f6e4", "#f4f8fb"]

@@ -1,0 +1,16 @@
+{
+  "app_mode": "demo",
+  "artifacts": {
+    "baseline_prediction_rows": 5000,
+    "demand_evaluation_prediction_rows": 2692,
+    "ecowatt_rows": 0,
+    "energy_recent_rows": 673,
+    "model_forecast_rows": 4,
+    "quality_passed": true,
+    "weather_rows": 1345
+  },
+  "generated_at": "2026-06-17T22:08:03.394726+00:00",
+  "schema_version": 1,
+  "window_end_utc": "2024-12-31T23:30:00+00:00",
+  "window_start_utc": "2024-12-17T23:30:00+00:00"
+}

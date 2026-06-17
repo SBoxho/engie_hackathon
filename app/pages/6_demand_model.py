@@ -8,8 +8,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from app.components.cards import explanation_card, horizon_forecast_card, message_box, section_header
+from app.components.cards import explanation_card, horizon_forecast_card, message_box, section_header, viz_note
 from app.components.layout import apply_theme
+from src.config import settings
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -301,21 +302,27 @@ def render_explained_forecasts(rows: pd.DataFrame, payload: dict) -> None:
 apply_theme()
 
 st.title("Demand model")
+st.caption(settings.app_mode_label)
 st.caption(
     "Experimental weather-aware demand model. This is not an RTE operational forecast "
     "and should only be read as a backtested research artifact."
 )
 
-artifact_path = st.text_input("Evaluation artifact", str(DEFAULT_EVALUATION))
+default_evaluation = settings.demo_model_evaluation_path if settings.is_demo_mode else DEFAULT_EVALUATION
+artifact_path = st.text_input("Evaluation artifact", str(default_evaluation))
 try:
     payload = load_evaluation(artifact_path)
 except (OSError, ValueError, json.JSONDecodeError) as exc:
-    st.info("Run the demand model pipeline before opening this page.")
-    st.code(
-        "python -m scripts.build_features\n"
-        "python -m scripts.train_demand_model\n"
-        "python -m scripts.evaluate_demand_model"
-    )
+    if settings.is_demo_mode:
+        st.info("The bundled demand-model demo artifact is not available.")
+        st.code("python -m scripts.export_demo_bundle")
+    else:
+        st.info("Run the demand model pipeline before opening this page.")
+        st.code(
+            "python -m scripts.build_features\n"
+            "python -m scripts.train_demand_model\n"
+            "python -m scripts.evaluate_demand_model"
+        )
     st.caption(f"Artifact unavailable: {exc}")
     st.stop()
 
@@ -371,6 +378,11 @@ if baseline_column not in selected:
 
 baseline_label = BASELINE_LABELS.get(baseline_column.replace("_predicted_mw", ""), "Baseline")
 figure = selected_horizon_chart(selected, baseline_column, baseline_label)
+viz_note(
+    "Forecast versus reality",
+    "This chart compares the model, actual demand, uncertainty band, and strongest simple baseline for the selected horizon.",
+    source="Demand model evaluation",
+)
 st.plotly_chart(figure, width="stretch")
 
 render_trust_panel(comparisons, metrics, payload, horizon, data_audit)
