@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "reference_id": "insee-populations-legales-2022",
+  "population_measure": "population municipale",
+  "population_reference_year": 2022,
+  "published_by": "INSEE",
+  "source_url": "https://www.insee.fr/fr/statistiques/8290591",
+  "source_file_url": "https://www.insee.fr/fr/statistiques/fichier/8290591/ensemble.zip",
+  "notes": "Ten most populous communes in metropolitan France, weighted by official municipal population. Coordinates are commune-centre coordinates used solely for the Open-Meteo point query.",
+  "cities": [
+    {"id": "paris", "name": "Paris", "insee_code": "75056", "latitude": 48.8566, "longitude": 2.3522, "population": 2113705},
+    {"id": "marseille", "name": "Marseille", "insee_code": "13055", "latitude": 43.2965, "longitude": 5.3698, "population": 877215},
+    {"id": "lyon", "name": "Lyon", "insee_code": "69123", "latitude": 45.7640, "longitude": 4.8357, "population": 520774},
+    {"id": "toulouse", "name": "Toulouse", "insee_code": "31555", "latitude": 43.6047, "longitude": 1.4442, "population": 511684},
+    {"id": "nice", "name": "Nice", "insee_code": "06088", "latitude": 43.7102, "longitude": 7.2620, "population": 353701},
+    {"id": "nantes", "name": "Nantes", "insee_code": "44109", "latitude": 47.2184, "longitude": -1.5536, "population": 325070},
+    {"id": "montpellier", "name": "Montpellier", "insee_code": "34172", "latitude": 43.6108, "longitude": 3.8767, "population": 307101},
+    {"id": "strasbourg", "name": "Strasbourg", "insee_code": "67482", "latitude": 48.5734, "longitude": 7.7521, "population": 291709},
+    {"id": "bordeaux", "name": "Bordeaux", "insee_code": "33063", "latitude": 44.8378, "longitude": -0.5792, "population": 265328},
+    {"id": "lille", "name": "Lille", "insee_code": "59350", "latitude": 50.6292, "longitude": 3.0573, "population": 238695}
+  ]
+}
