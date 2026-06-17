@@ -4,6 +4,10 @@ Energy Pulse France is a Python-first Streamlit application for trustworthy Fren
 
 No live, historical, weather, or forecast values are fabricated. Cached values are labelled as cached, and baseline forecasts are explicitly not described as AI.
 
+## UX structure
+
+The Streamlit entry page is now a story-first public demo: a hero, current grid pulse cards, a 24-hour demand-pressure timeline, plain-language driver cards, a demand-shifting simulator link, and a model-honesty box. Raw dataframes, calibration details, data quality checks, historical views, baseline backtests, and the experimental demand model remain available from the **Advanced / Data Science** section so non-technical reviewers see the energy-weather story first while technical reviewers can still inspect the evidence.
+
 ## Official data sources
 
 | Data | Access | Dataset / reference | Notes |
@@ -52,7 +56,12 @@ python -m scripts.run_quality_checks
 python -m scripts.backtest_baselines
 python -m scripts.calibrate_mood
 
-# 8. Dashboard.
+# 8. Experimental weather-aware demand model.
+python -m scripts.build_features
+python -m scripts.train_demand_model
+python -m scripts.evaluate_demand_model
+
+# 9. Dashboard.
 python run_app.py
 ```
 
@@ -65,6 +74,10 @@ Use `python -m scripts.update_data --offline` to process the newest immutable ne
 - `data/processed/weather_national.parquet`: population-weighted weather with source timestamps and coverage diagnostics.
 - `data/processed/energy_weather.parquet`: weather joined backward to the electricity timeline, preventing future-data leakage.
 - `data/processed/baseline_backtest.json`: deterministic prediction-level and metric artifact.
+- `data/processed/demand_model/features.parquet`: supervised demand-model features generated from exact UTC forecast origins; ignored by Git.
+- `data/processed/demand_model/feature_metadata.json`: feature schema, leakage controls, source coverage, and weather coverage.
+- `data/processed/demand_model/demand_hgb_model.pkl`: generated scikit-learn model bundle; ignored by Git.
+- `data/processed/demand_model/evaluation.json`: model-versus-baseline metrics and prediction records for untouched chronological test periods.
 - `data/processed/mood_calibration.json`: quantile thresholds, source period, sample sizes, fallback metadata, and generation time.
 
 The standardized electricity schema includes explicit UTC timestamps, region, consumption, generation by source, imports/exports, source CO₂ intensity, total/renewable/fossil production, and renewable/fossil shares. Suspicious records remain available as quality evidence; quality checks do not silently clean them away.
@@ -80,6 +93,31 @@ python -m scripts.run_quality_checks --start 2024-01-01 --end 2024-02-01
 ## Forecast baselines
 
 The backtest uses chronological rolling origins and exact target timestamps for persistence, previous-day, and previous-week seasonal-naive forecasts at 1, 3, 6, and 24 hours. It reports MAE, RMSE, sMAPE, sample count, missing targets, and coverage. These are reference rules that a future ML model must beat—not an AI model or production-quality forecast.
+
+## Experimental demand model
+
+The demand model is a CPU-friendly scikit-learn `HistGradientBoostingRegressor`, trained as one direct model per 1, 3, 6, and 24 hour horizon. It uses only features available at the forecast origin: observed demand lags, shifted rolling demand statistics, Europe/Paris calendar features across DST, holiday flags, and population-weighted weather joined with source provenance no later than the origin. Target demand is never interpolated.
+
+```powershell
+python -m scripts.build_features --min-continuous-hours 48
+python -m scripts.train_demand_model
+python -m scripts.evaluate_demand_model
+```
+
+Feature generation infers the observed demand cadence, so consolidated 30-minute history and near-live 15-minute history are both handled without target interpolation. The evaluator uses chronological train/test splits and compares the model against persistence, previous-day, and previous-week baselines on the exact same test origins. The Streamlit **Demand model** page shows recent actuals versus model and baseline predictions, horizon metrics, training/evaluation periods, data freshness, weather coverage, and artifact timestamps. The page labels the model as experimental and not an RTE operational forecast.
+
+To backfill a continuous multi-season training set, use a bounded consolidated demand window and the matching historical weather window:
+
+```powershell
+python -m scripts.fetch_historical --start 2024-01-01 --end 2025-01-01 --output data/processed/eco2mix_historical_2024_clean.parquet
+python -m scripts.fetch_weather --start 2024-01-01 --end 2024-12-31 --output data/processed/weather_national_2024.parquet --joined-output data/processed/energy_weather_2024.parquet --strict
+python -m scripts.build_features --start 2024-01-01 --end 2025-01-01 --weather data/processed/weather_national_2024.parquet --min-continuous-hours 168
+python -m scripts.train_demand_model
+python -m scripts.evaluate_demand_model
+python -m scripts.backtest_baselines --start 2024-01-01 --end 2025-01-01
+```
+
+See `docs/demand_model.md` for features, split assumptions, artifact format, limitations, and interpretation guidance. Model performance depends on obtaining a sufficiently long, continuous historical demand and weather dataset; short cached slices can train a smoke-test model but must not be read as evidence of forecasting skill.
 
 ## Grid mood
 
@@ -108,12 +146,13 @@ python -m pytest -q
 - The consolidated series can differ from the near-live schema and cadence. Quality reports expose cadence gaps; baseline coverage records unavailable exact targets.
 - Population weighting covers ten large communes and is an urban exposure proxy, not all residents or regional weather diversity.
 - Hourly weather is aligned backward to quarter-hours. It is leakage-safe but does not create new intra-hour observations.
+- The experimental demand model is only as good as the continuous history available. It may correctly report that baselines are stronger, that week-naive baselines are ineligible, or that there is insufficient data to train.
 - Source CO₂ intensity is retained; imported electricity is not decomposed by foreign generation mix.
 - Multi-partition writes are atomic per month, not as one cross-month transaction.
 
 ## Next AI tasks
 
-1. Train weather-aware gradient-boosted demand models only after defining chronological train/validation/test periods and beating every baseline by horizon.
+1. Extend the continuous official history and weather backfill, then retrain until the model is evaluated over multiple seasons and holidays.
 2. Add probabilistic intervals and calibration diagnostics, especially around holidays and extreme weather.
 3. Add regional éCO2mix and weather features with hierarchical validation.
 4. Explain validated model predictions with time-safe SHAP analysis and plain-language driver summaries.
