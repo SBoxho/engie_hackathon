@@ -44,6 +44,10 @@ RAW_REQUIRED = {
     "ech_physiques",
     "taux_co2",
 }
+RAW_OPTIONAL = {
+    "prevision_j",
+    "prevision_j1",
+}
 
 # Historical exports have used both labels and field identifiers. Normalizing
 # accents/punctuation first makes old downloaded snapshots usable as well.
@@ -62,6 +66,12 @@ ALIASES = {
     "ech_physiques": "ech_physiques",
     "echanges_physiques": "ech_physiques",
     "taux_co2": "taux_co2",
+    "prevision_j": "prevision_j",
+    "prevision_j_mw": "prevision_j",
+    "prevision_j1": "prevision_j1",
+    "prevision_j_1": "prevision_j1",
+    "prevision_j1_mw": "prevision_j1",
+    "prevision_j_1_mw": "prevision_j1",
     "perimetre": "perimetre",
 }
 
@@ -239,7 +249,7 @@ def _field_id(column: object) -> str:
 def reconcile_historical_schema(raw: pd.DataFrame) -> pd.DataFrame:
     """Reconcile historical field variants to the live clean-energy input."""
     if raw.empty:
-        return pd.DataFrame(columns=sorted(RAW_REQUIRED | {"perimetre"}))
+        return pd.DataFrame(columns=sorted(RAW_REQUIRED | RAW_OPTIONAL | {"perimetre"}))
     renamed = {column: ALIASES.get(_field_id(column), _field_id(column)) for column in raw.columns}
     frame = raw.rename(columns=renamed).copy()
     missing_essential = {"date_heure", "consommation"}.difference(frame.columns)

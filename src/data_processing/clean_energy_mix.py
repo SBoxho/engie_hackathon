@@ -17,6 +17,10 @@ SOURCE_MAP = {
     "taux_co2": "co2_intensity_g_per_kwh",
     "ech_physiques": "net_imports_mw",
 }
+OPTIONAL_SOURCE_MAP = {
+    "prevision_j": "rte_forecast_j_mw",
+    "prevision_j1": "rte_forecast_j1_mw",
+}
 NUMERIC_COLUMNS = list(SOURCE_MAP.values())
 
 
@@ -25,10 +29,14 @@ def clean_energy_mix(raw: pd.DataFrame) -> pd.DataFrame:
     require_columns(raw, {"date_heure", *SOURCE_MAP.keys()}, "raw éCO2mix data")
 
     frame = raw.rename(columns=SOURCE_MAP).copy()
+    frame = frame.rename(columns={key: value for key, value in OPTIONAL_SOURCE_MAP.items() if key in frame})
     frame["timestamp"] = pd.to_datetime(frame["date_heure"], utc=True, errors="coerce")
     frame["region"] = frame.get("perimetre", "France").fillna("France")
     for column in NUMERIC_COLUMNS:
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
+    for column in OPTIONAL_SOURCE_MAP.values():
+        if column in frame:
+            frame[column] = pd.to_numeric(frame[column], errors="coerce")
 
     frame = frame.dropna(subset=["timestamp", "consumption_mw"]).sort_values("timestamp")
     frame = frame.drop_duplicates(subset=["timestamp", "region"], keep="last")
@@ -53,6 +61,7 @@ def clean_energy_mix(raw: pd.DataFrame) -> pd.DataFrame:
         "renewable_production_mw", "renewable_share", "fossil_production_mw",
         "fossil_share",
     ]
+    columns.extend(column for column in OPTIONAL_SOURCE_MAP.values() if column in frame)
     return frame[columns].reset_index(drop=True)
 
 
@@ -68,4 +77,3 @@ def grid_mood(frame: pd.DataFrame) -> tuple[str, str]:
     if latest["renewable_share"] >= 0.35 and latest["co2_intensity_g_per_kwh"] <= 40:
         return "Renewable-rich", "Renewables ≥ 35% and CO₂ ≤ 40 g/kWh"
     return "Calm", "No temporary stress or carbon threshold is triggered"
-

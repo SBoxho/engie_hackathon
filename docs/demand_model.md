@@ -12,24 +12,21 @@ python -m scripts.train_demand_model
 python -m scripts.evaluate_demand_model
 ```
 
-The defaults read `data/processed/eco2mix`, join `data/processed/weather_national.parquet` when present, and write generated artifacts under `data/processed/demand_model/`. The `data/processed/*` ignore rule keeps feature tables, model binaries, and evaluation outputs out of Git.
+The defaults read `data/processed/eco2mix`, join `data/processed/weather_national.parquet` and `data/processed/school_calendar.parquet` when present, and write generated artifacts under `data/processed/demand_model/`. The `data/processed/*` ignore rule keeps feature tables, model binaries, and evaluation outputs out of Git.
 
 For consolidated historical éCO2mix, the observed cadence can be 30 minutes rather than the near-live 15-minute cadence. Feature generation infers the cadence mode by default and records it in metadata. Use `--cadence-minutes` only when you need an explicit override.
 
 ## Multi-season backfill
 
-Calendar year 2024 is a practical bounded example because it covers winter, spring, summer, and autumn while staying within the consolidated demand fetcher's one-request limit:
+Use the multi-year backfill command for robust seasonal coverage:
 
 ```powershell
-python -m scripts.fetch_historical --start 2024-01-01 --end 2025-01-01 --output data/processed/eco2mix_historical_2024_clean.parquet
-python -m scripts.fetch_weather --start 2024-01-01 --end 2024-12-31 --output data/processed/weather_national_2024.parquet --joined-output data/processed/energy_weather_2024.parquet --strict
-python -m scripts.build_features --start 2024-01-01 --end 2025-01-01 --weather data/processed/weather_national_2024.parquet --min-continuous-hours 168
-python -m scripts.train_demand_model
-python -m scripts.evaluate_demand_model
-python -m scripts.backtest_baselines --start 2024-01-01 --end 2025-01-01
+python -m scripts.backfill_multiyear --start-year 2019 --end-year 2025 --strict-weather --train --evaluate
 ```
 
-The final baseline command writes the dashboard baseline artifact for the same calendar period; the model evaluation artifact also includes baseline metrics recomputed on the model's untouched test origins.
+The command loops one consolidated éCO2mix calendar year at a time so each official ODRÉ response keeps its immutable raw cache snapshot and the existing clean store remains partitioned by year/month. It rebuilds weather features on the actual stored energy timestamps, which keeps consolidated 30-minute demand native while still supporting 15-minute near-live rows. It also fetches the official `fr-en-calendrier-scolaire` school calendar from data.education.gouv.fr and writes `data/processed/school_calendar.parquet`.
+
+The model evaluation artifact includes baseline metrics recomputed on the model's untouched chronological test origins. When consolidated RTE J/J-1 forecast columns are available, the evaluator adds an `rte_forecast` baseline alongside persistence, previous-day, and previous-week.
 
 ## Data validation
 
@@ -54,7 +51,7 @@ Demand features use observations whose source time is at or before the origin:
 
 Calendar features use Europe/Paris local time while storing timestamps in UTC:
 
-- Origin and target hour, weekday, month, season, weekend, French holiday, DST flag, UTC offset, and cyclic hour/weekday terms.
+- Origin and target hour, weekday, month, season, weekend, French public-holiday flag, official school-holiday Zone A/B/C flags, DST flag, UTC offset, and cyclic hour/weekday terms.
 - Target calendar features are deterministic future calendar values, not observed future measurements.
 
 Weather features are population-weighted Open-Meteo fields joined at the origin timestamp:
@@ -84,7 +81,7 @@ Evaluation is chronological. For each horizon:
 - Valid supervised rows are sorted by target timestamp.
 - The last chronological fraction is held out as the untouched test period.
 - Earlier rows are used for expanding-window validation and final training.
-- The model and persistence, previous-day, and previous-week baselines are scored on the exact same test origins and target timestamps.
+- The model and persistence, previous-day, previous-week, and optional RTE J/J-1 forecast baselines are scored on the exact same test origins and target timestamps.
 
 Metrics are MAE, RMSE, sMAPE, sample count, coverage, and improvement versus the strongest eligible baseline by MAE. Baselines with zero usable samples, such as previous-week on histories shorter than seven days, are reported but not treated as eligible. Hour and season metrics are emitted only when a segment has enough samples.
 
@@ -109,7 +106,7 @@ Each prediction record contains 2-4 readable explanation cards plus a compact te
 Generated artifact layout:
 
 - `features.parquet`: supervised feature rows with origin/target timestamps, horizon, target, continuity flags, and model features.
-- `feature_metadata.json`: schema version, feature columns, target column, source, coverage audit, weather audit, leakage controls, and source digest.
+- `feature_metadata.json`: schema version, feature columns, target column, source, coverage audit, weather audit, leakage controls, school-calendar feature controls, and source digest.
 - `demand_hgb_model.pkl`: pickled model bundle containing schema version, model kind, feature metadata, train config, per-horizon feature schemas, per-horizon point and quantile models, split periods, validation metrics, interval definition, and skipped horizon reasons.
 - `evaluation.json`: model metrics, baseline metrics, improvement rows with trust badges, segment metrics, prediction-level records with point forecasts, lower/upper interval bounds, local explanation cards, data audit, training periods, generation timestamp, and the experimental forecast and explanation disclaimers.
 

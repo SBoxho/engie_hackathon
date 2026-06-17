@@ -13,6 +13,7 @@ from typing import Any, Iterable
 import numpy as np
 import pandas as pd
 
+from src.data_sources.school_calendar import school_holiday_features
 from src.models.demand_baselines import BASELINE_LAGS, HORIZON_HOURS, INTERVAL, _metrics
 
 
@@ -38,6 +39,10 @@ WEATHER_META_COLUMNS = (
     "weather_city_count",
     "weather_expected_city_count",
     "weather_source_timestamp_max",
+)
+RTE_FORECAST_COLUMNS = (
+    "rte_forecast_j_mw",
+    "rte_forecast_j1_mw",
 )
 REQUIRED_ENERGY_COLUMNS = {"timestamp", "consumption_mw"}
 MODEL_KIND = "sklearn.HistGradientBoostingRegressor"
@@ -336,6 +341,10 @@ def prepare_model_input(energy: pd.DataFrame, weather: pd.DataFrame | None = Non
             result[column] = np.nan
     if "weather_population_coverage" not in result:
         result["weather_population_coverage"] = 0.0
+    for column in RTE_FORECAST_COLUMNS:
+        if column not in result:
+            result[column] = np.nan
+        result[column] = pd.to_numeric(result[column], errors="coerce")
     return result.sort_values("timestamp", kind="stable").reset_index(drop=True)
 
 
@@ -343,6 +352,7 @@ def build_feature_frame(
     energy: pd.DataFrame,
     *,
     weather: pd.DataFrame | None = None,
+    school_calendar: pd.DataFrame | None = None,
     config: FeatureConfig | None = None,
     source: str = "unknown",
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
@@ -367,7 +377,7 @@ def build_feature_frame(
             f"Need at least {config.min_continuous_hours:g} hours."
         )
 
-    base = _base_features(model_input, config.timezone, cadence)
+    base = _base_features(model_input, config.timezone, cadence, school_calendar=school_calendar)
     values = model_input.set_index("timestamp")["consumption_mw"].sort_index()
     block_by_timestamp = _continuous_block_ids(model_input, cadence=cadence)
     feature_parts: list[pd.DataFrame] = []
@@ -389,7 +399,11 @@ def build_feature_frame(
         feature_parts.append(horizon_frame)
     features = pd.concat(feature_parts, ignore_index=True)
     features = features.sort_values(["horizon_hours", "origin_timestamp"], kind="stable").reset_index(drop=True)
-    features = add_target_calendar_features(features, config.timezone)
+    features = add_target_calendar_features(
+        features,
+        config.timezone,
+        school_calendar=school_calendar,
+    )
     feature_columns = model_feature_columns(features)
     metadata = {
         "schema_version": FEATURE_SCHEMA_VERSION,
@@ -408,6 +422,7 @@ def build_feature_frame(
             "rolling demand statistics are shifted by one interval before aggregation",
             "weather source timestamps must be less than or equal to the forecast origin",
             "target calendar features are deterministic calendar values, not observed future data",
+            "school holiday features come from the official open school calendar and are deterministic calendar values",
         ],
         "audit": {**audit, "eligible_continuous_periods": eligible_periods},
         "row_count": int(len(features)),
@@ -418,7 +433,13 @@ def build_feature_frame(
     return features, metadata
 
 
-def _base_features(frame: pd.DataFrame, timezone_name: str, cadence: pd.Timedelta) -> pd.DataFrame:
+def _base_features(
+    frame: pd.DataFrame,
+    timezone_name: str,
+    cadence: pd.Timedelta,
+    *,
+    school_calendar: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     timestamps = pd.DatetimeIndex(frame["timestamp"])
     local_origin = pd.Series(timestamps.tz_convert(timezone_name), index=frame.index)
     values = frame.set_index("timestamp")["consumption_mw"].sort_index()
@@ -450,6 +471,9 @@ def _base_features(frame: pd.DataFrame, timezone_name: str, cadence: pd.Timedelt
     result["origin_weekday_sin"] = np.sin(2 * np.pi * result["origin_weekday"] / 7)
     result["origin_weekday_cos"] = np.cos(2 * np.pi * result["origin_weekday"] / 7)
     result["origin_is_holiday"] = _holiday_flags(local_origin).astype(int)
+    school_origin = school_holiday_features(local_origin, school_calendar)
+    school_origin = school_origin.add_prefix("origin_")
+    result = pd.concat([result, school_origin], axis=1)
     target_placeholders = pd.DataFrame(index=result.index)
     for column in WEATHER_COLUMNS:
         result[column] = pd.to_numeric(frame[column], errors="coerce") if column in frame else np.nan
@@ -471,10 +495,17 @@ def _base_features(frame: pd.DataFrame, timezone_name: str, cadence: pd.Timedelt
         )
     else:
         result["weather_source_age_minutes"] = np.nan
+    for column in RTE_FORECAST_COLUMNS:
+        result[column] = pd.to_numeric(frame.get(column, np.nan), errors="coerce")
     return pd.concat([result, target_placeholders], axis=1)
 
 
-def add_target_calendar_features(features: pd.DataFrame, timezone_name: str = DEFAULT_TIMEZONE) -> pd.DataFrame:
+def add_target_calendar_features(
+    features: pd.DataFrame,
+    timezone_name: str = DEFAULT_TIMEZONE,
+    *,
+    school_calendar: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     result = features.copy()
     local_target = pd.Series(
         pd.DatetimeIndex(result["target_timestamp"]).tz_convert(timezone_name), index=result.index
@@ -493,6 +524,13 @@ def add_target_calendar_features(features: pd.DataFrame, timezone_name: str = DE
     result["target_weekday_sin"] = np.sin(2 * np.pi * result["target_weekday"] / 7)
     result["target_weekday_cos"] = np.cos(2 * np.pi * result["target_weekday"] / 7)
     result["target_is_holiday"] = _holiday_flags(local_target).astype(int)
+    if school_calendar is not None or not any(
+        column.startswith("target_school_holiday_") for column in result.columns
+    ):
+        school_target = school_holiday_features(local_target, school_calendar)
+        school_target = school_target.add_prefix("target_")
+        result = result.drop(columns=[column for column in school_target.columns if column in result], errors="ignore")
+        result = pd.concat([result, school_target], axis=1)
     return result
 
 
@@ -1206,7 +1244,14 @@ def evaluate_models(
         model_metrics = regression_metrics(predictions[TARGET_COLUMN], predictions["model_predicted_mw"])
         metric_rows.append({"model": "demand_hgb", "horizon_hours": horizon, **model_metrics})
         baseline_metric_rows: list[dict[str, Any]] = []
-        for baseline in BASELINE_LAGS:
+        baseline_columns = [
+            column.removesuffix("_predicted_mw")
+            for column in predictions.columns
+            if column.endswith("_predicted_mw")
+            and column
+            not in {"model_predicted_mw", "model_interval_lower_mw", "model_interval_upper_mw"}
+        ]
+        for baseline in baseline_columns:
             metrics = regression_metrics(predictions[TARGET_COLUMN], predictions[f"{baseline}_predicted_mw"])
             row = {"model": baseline, "horizon_hours": horizon, **metrics}
             metric_rows.append(row)
@@ -1286,6 +1331,30 @@ def add_baseline_predictions(predictions: pd.DataFrame, features: pd.DataFrame) 
             raise ValueError(f"{baseline} would use observations after the forecast origin.")
         result[f"{baseline}_source_timestamp"] = source_times
         result[f"{baseline}_predicted_mw"] = values.reindex(source_times).to_numpy()
+    forecast_columns = [column for column in RTE_FORECAST_COLUMNS if column in features]
+    if forecast_columns:
+        forecast_source = (
+            features[["origin_timestamp", *forecast_columns]]
+            .drop_duplicates("origin_timestamp", keep="last")
+            .set_index("origin_timestamp")
+            .sort_index()
+        )
+        forecast_values = pd.DataFrame(index=result.index)
+        for column in forecast_columns:
+            forecast_values[column] = forecast_source[column].reindex(target).to_numpy()
+        origin_local_dates = pd.Series(origin.tz_convert(DEFAULT_TIMEZONE).date, index=result.index)
+        target_local_dates = pd.Series(target.tz_convert(DEFAULT_TIMEZONE).date, index=result.index)
+        same_day = origin_local_dates.eq(target_local_dates)
+        if "rte_forecast_j_mw" in forecast_values:
+            forecast_values.loc[~same_day, "rte_forecast_j_mw"] = np.nan
+        if "rte_forecast_j1_mw" in forecast_values:
+            forecast_values.loc[same_day, "rte_forecast_j1_mw"] = np.nan
+        selected = forecast_values.get("rte_forecast_j_mw", pd.Series(np.nan, index=result.index))
+        if "rte_forecast_j1_mw" in forecast_values:
+            selected = selected.fillna(forecast_values["rte_forecast_j1_mw"])
+        if selected.notna().any():
+            result["rte_forecast_source_timestamp"] = target
+            result["rte_forecast_predicted_mw"] = selected.to_numpy()
     return result
 
 

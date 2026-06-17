@@ -13,7 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.demand_baselines import backtest_baselines, detect_demand_columns, read_demand_file
+from src.models.demand_baselines import backtest_baselines, detect_demand_columns, infer_cadence, read_demand_file
 from src.data_processing.storage import read_processed_data
 from src.config import settings
 
@@ -45,11 +45,11 @@ def _json_records(frame: pd.DataFrame) -> list[dict[str, Any]]:
     return json.loads(serializable.to_json(orient="records", double_precision=10))
 
 
-def write_artifact(result: Any, output: Path, source: str) -> Path:
+def write_artifact(result: Any, output: Path, source: str, *, interval_minutes: int = 15) -> Path:
     payload = {
         "schema_version": 1,
         "method": "chronological rolling-origin direct seasonal-naive backtest",
-        "interval_minutes": 15,
+        "interval_minutes": int(interval_minutes),
         "source": source,
         "metrics": _json_records(result.metrics),
         "predictions": _json_records(result.predictions),
@@ -86,6 +86,7 @@ def parse_args() -> argparse.Namespace:
         help="When --start is omitted, evaluate only this many days before the latest observation",
     )
     parser.add_argument("--region", action="append", dest="regions", help="Region filter; repeatable")
+    parser.add_argument("--cadence-minutes", type=int, help="Override inferred demand cadence")
     return parser.parse_args()
 
 
@@ -107,9 +108,21 @@ def main() -> int:
         cutoff = timestamps.max() - pd.Timedelta(days=args.lookback_days)
         frame = frame.loc[timestamps >= cutoff].copy()
     result = backtest_baselines(
-        frame, timestamp_col=args.timestamp_column, demand_col=args.demand_column
+        frame,
+        timestamp_col=args.timestamp_column,
+        demand_col=args.demand_column,
+        cadence_minutes=args.cadence_minutes,
     )
-    artifact = write_artifact(result, args.output, source)
+    interval = infer_cadence(
+        result.predictions.rename(columns={"origin": "timestamp"}),
+        args.cadence_minutes,
+    )
+    artifact = write_artifact(
+        result,
+        args.output,
+        source,
+        interval_minutes=int(interval / pd.Timedelta(minutes=1)),
+    )
     print(f"Wrote {len(result.predictions):,} predictions and {len(result.metrics)} metric rows to {artifact}")
     return 0
 

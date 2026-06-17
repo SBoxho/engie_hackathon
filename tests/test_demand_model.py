@@ -162,6 +162,46 @@ def test_feature_builder_infers_consolidated_30_minute_cadence():
     ).all()
 
 
+def test_multi_year_30_minute_feature_generation_with_school_calendar_smoke():
+    energy = synthetic_energy(10, start="2023-12-28T00:00:00Z").iloc[::2].reset_index(drop=True)
+    weather = synthetic_weather(energy)
+    school_calendar = pd.DataFrame(
+        [
+            {
+                "start_date": pd.Timestamp("2023-12-23").date(),
+                "end_date": pd.Timestamp("2024-01-08").date(),
+                "zone": zone,
+                "description": "Vacances de Noel",
+                "source": "fr-en-calendrier-scolaire",
+            }
+            for zone in ("a", "b", "c")
+        ]
+    )
+
+    features, metadata = build_feature_frame(
+        energy,
+        weather=weather,
+        school_calendar=school_calendar,
+        config=FeatureConfig(horizons_hours=(6, 24), min_continuous_hours=168),
+        source="multi-year-smoke",
+    )
+
+    assert metadata["audit"]["cadence_minutes"] == 30
+    assert pd.to_datetime(features["origin_timestamp"], utc=True).dt.year.nunique() > 1
+    assert {
+        "origin_school_holiday_any_zone",
+        "target_school_holiday_all_zones",
+        "target_school_holiday_zone_a",
+    } <= set(features.columns)
+    usable = features[
+        features["target_mw"].notna()
+        & features["same_continuous_block"]
+        & features["eligible_continuous_period"]
+    ]
+    assert not usable.empty
+    assert usable["target_school_holiday_all_zones"].eq(1).any()
+
+
 def test_missing_target_breaks_continuity_without_interpolation_and_weather_is_explicit():
     energy = synthetic_energy(4)
     energy.loc[100, "consumption_mw"] = np.nan
@@ -233,6 +273,30 @@ def test_deterministic_training_and_evaluation_baseline_comparison():
     assert 2 <= len(first_explanation["explanation_cards"]) <= 4
     assert first_explanation["technical_contributions"]
     assert all("weather_" not in card["title"] for card in first_explanation["explanation_cards"])
+
+
+def test_rte_forecast_baseline_is_evaluated_when_available():
+    energy = synthetic_energy(10)
+    energy["rte_forecast_j_mw"] = energy["consumption_mw"] + 25
+    energy["rte_forecast_j1_mw"] = energy["consumption_mw"] + 50
+    features, metadata = build_feature_frame(
+        energy,
+        weather=synthetic_weather(energy),
+        config=FeatureConfig(horizons_hours=(1,), min_continuous_hours=48),
+        source="synthetic-rte-forecast",
+    )
+    bundle = train_models(
+        features,
+        metadata,
+        config=TrainConfig(min_train_samples=96, min_test_samples=24, validation_folds=1),
+    )
+    evaluation = evaluate_models(features, bundle, min_segment_samples=8)
+    metric_models = {row["model"] for row in evaluation["metrics"]}
+    predictions = pd.DataFrame(evaluation["predictions"])
+
+    assert "rte_forecast" in metric_models
+    assert "rte_forecast_predicted_mw" in predictions
+    assert predictions["rte_forecast_predicted_mw"].notna().any()
 
 
 def test_metric_calculation_and_artifact_schema_validation(tmp_path):

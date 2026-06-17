@@ -44,6 +44,22 @@ def detect_demand_columns(frame: pd.DataFrame) -> tuple[str, str]:
     return timestamp, demand
 
 
+def infer_cadence(frame: pd.DataFrame, cadence_minutes: int | None = None) -> pd.Timedelta:
+    if cadence_minutes is not None:
+        if cadence_minutes <= 0:
+            raise ValueError("cadence_minutes must be positive")
+        return pd.Timedelta(minutes=int(cadence_minutes))
+    if frame.empty or "timestamp" not in frame:
+        return INTERVAL
+    timestamps = pd.DatetimeIndex(pd.to_datetime(frame["timestamp"], utc=True, errors="coerce")).dropna()
+    unique = timestamps.drop_duplicates().sort_values()
+    diffs = unique.to_series().diff().dropna()
+    diffs = diffs[diffs > pd.Timedelta(0)]
+    if diffs.empty:
+        return INTERVAL
+    return pd.Timedelta(diffs.mode().iloc[0])
+
+
 def normalize_demand(
     frame: pd.DataFrame,
     *,
@@ -81,6 +97,7 @@ def backtest_baselines(
     horizons_hours: Iterable[int] = HORIZON_HOURS,
     timestamp_col: str | None = None,
     demand_col: str | None = None,
+    cadence_minutes: int | None = None,
 ) -> BacktestResult:
     """Run direct rolling-origin baselines over every eligible 15-minute origin.
 
@@ -91,6 +108,7 @@ def backtest_baselines(
     demand = normalize_demand(frame, timestamp_col=timestamp_col, demand_col=demand_col)
     if demand.empty:
         raise ValueError("Demand data is empty.")
+    cadence = infer_cadence(demand, cadence_minutes)
     horizons = tuple(sorted(set(int(value) for value in horizons_hours)))
     if not horizons or any(value <= 0 or value > 24 for value in horizons):
         raise ValueError("Horizons must be unique positive whole hours up to 24.")
@@ -104,7 +122,7 @@ def backtest_baselines(
         if last_origin < demand["timestamp"].iloc[0]:
             continue
         origins = pd.date_range(
-            demand["timestamp"].iloc[0], last_origin, freq=INTERVAL, tz="UTC"
+            demand["timestamp"].iloc[0], last_origin, freq=cadence, tz="UTC"
         )
         targets = origins + delta
         actual = values.reindex(targets).to_numpy()

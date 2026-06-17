@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "title": "Shift the Load demo assumptions",
+  "disclaimer": "Educational fallback assumptions for approximate flexible electricity use. Replace these values with ADEME ElecDom-derived values when the source file is available in the project.",
+  "source_notes": [
+    "ADEME ElecDom open data was requested for appliance consumption, but no source file is bundled with this repository.",
+    "Values are approximate per-household event energy assumptions for an offline public demo, not measured household savings.",
+    "EV charging and heating reduction are placeholders and are explicitly labelled as such in the app."
+  ],
+  "actions": [
+    {
+      "id": "washing_machine",
+      "label": "Washing machine",
+      "energy_kwh_per_event": 0.8,
+      "duration_hours": 2,
+      "icon": "WM",
+      "source_label": "Fallback assumption",
+      "source_detail": "Approximate electricity for one typical wash cycle; replace with ADEME ElecDom when available.",
+      "placeholder": false
+    },
+    {
+      "id": "dishwasher",
+      "label": "Dishwasher",
+      "energy_kwh_per_event": 1.0,
+      "duration_hours": 2,
+      "icon": "DW",
+      "source_label": "Fallback assumption",
+      "source_detail": "Approximate electricity for one dishwasher cycle; replace with ADEME ElecDom when available.",
+      "placeholder": false
+    },
+    {
+      "id": "oven",
+      "label": "Oven",
+      "energy_kwh_per_event": 1.5,
+      "duration_hours": 1,
+      "icon": "OV",
+      "source_label": "Fallback assumption",
+      "source_detail": "Approximate electricity for one cooking event; ovens vary widely by model and use.",
+      "placeholder": false
+    },
+    {
+      "id": "ev_charging",
+      "label": "EV charging",
+      "energy_kwh_per_event": 11.0,
+      "duration_hours": 3,
+      "icon": "EV",
+      "source_label": "Placeholder assumption",
+      "source_detail": "Demo placeholder for a small home charging session. Not ADEME ElecDom-derived.",
+      "placeholder": true
+    },
+    {
+      "id": "heating_reduction",
+      "label": "Heating reduction",
+      "energy_kwh_per_event": 1.2,
+      "duration_hours": 1,
+      "icon": "HT",
+      "source_label": "Placeholder assumption",
+      "source_detail": "Demo placeholder for a temporary one-hour electric heating reduction with comfort-preserving rebound later.",
+      "placeholder": true
+    }
+  ]
+}

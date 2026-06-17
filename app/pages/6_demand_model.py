@@ -18,6 +18,7 @@ BASELINE_LABELS = {
     "persistence": "Persistence",
     "day_naive": "Previous day",
     "week_naive": "Previous week",
+    "rte_forecast": "RTE J/J-1 forecast",
 }
 SEASON_LABELS = {0: "Winter", 1: "Spring", 2: "Summer", 3: "Autumn"}
 EXPLANATION_FALLBACK = (
@@ -202,6 +203,13 @@ def render_trust_panel(
         f"Last trained: {payload.get('model_generated_at') or 'unknown'} | "
         f"training coverage: {data_audit.get('start_utc', 'unknown')} to {data_audit.get('end_utc', 'unknown')}"
     )
+    periods = payload.get("training_periods", {}).get(str(int(horizon)), {})
+    if periods:
+        st.caption(
+            "Selected horizon split: "
+            f"train {periods.get('train_start_utc', 'unknown')} to {periods.get('train_end_utc', 'unknown')} | "
+            f"test {periods.get('test_start_utc', 'unknown')} to {periods.get('test_end_utc', 'unknown')}"
+        )
     if comparisons.empty:
         return
     view = comparisons.copy()

@@ -39,22 +39,25 @@ def main() -> None:
         unknown = requested - {city.id for city in cities}
         if unknown:
             raise SystemExit(f"Unknown city ids: {', '.join(sorted(unknown))}")
-    raw = fetch_national_weather(
-        args.start, args.end, cities=cities, cache_dir=args.cache_dir,
-        force_refresh=args.force_refresh, strict=args.strict,
-    )
-    targets = pd.date_range(
-        pd.Timestamp(args.start, tz="UTC"),
-        pd.Timestamp(args.end, tz="UTC") + pd.Timedelta(days=1) - pd.Timedelta(minutes=15),
-        freq="15min",
-    )
-    features = build_national_weather_features(raw, targets, cities=cities)
-    write_dataframe(features, args.output)
     energy = read_processed_data(
         args.energy_store,
         start=pd.Timestamp(args.start, tz="UTC"),
         end=pd.Timestamp(args.end, tz="UTC") + pd.Timedelta(days=1),
     )
+    raw = fetch_national_weather(
+        args.start, args.end, cities=cities, cache_dir=args.cache_dir,
+        force_refresh=args.force_refresh, strict=args.strict,
+    )
+    if energy.empty:
+        targets = pd.date_range(
+            pd.Timestamp(args.start, tz="UTC"),
+            pd.Timestamp(args.end, tz="UTC") + pd.Timedelta(days=1) - pd.Timedelta(minutes=15),
+            freq="15min",
+        )
+    else:
+        targets = pd.DatetimeIndex(pd.to_datetime(energy["timestamp"], utc=True)).drop_duplicates().sort_values()
+    features = build_national_weather_features(raw, targets, cities=cities)
+    write_dataframe(features, args.output)
     joined_rows = 0
     if not energy.empty:
         joined = join_energy_weather(energy, features)

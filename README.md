@@ -15,6 +15,7 @@ The Streamlit entry page is now a story-first public demo: a hero, current grid 
 | Near-live national electricity | [ODRÉ/RTE éCO2mix](https://odre.opendatasoft.com/explore/dataset/eco2mix-national-tr/) | `eco2mix-national-tr`, Opendatasoft Explore API v2.1 | Public, no key; nominal 15-minute observations; rolling coverage and publication latency apply. |
 | Consolidated national history | [ODRÉ/RTE consolidated éCO2mix](https://odre.opendatasoft.com/explore/dataset/eco2mix-national-cons-def/) | `eco2mix-national-cons-def`, Opendatasoft Explore API v2.1 | Public, Licence Ouverte 2.0; coverage starts in 2012; historical cadence/schema can differ from near-live data. |
 | Weather | [Open-Meteo Forecast API](https://open-meteo.com/en/docs) and [Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) | Hourly temperature, wind, cloud cover, shortwave radiation, humidity | Public, no key; requested in UTC and cached by city/date. |
+| School holidays | [data.education.gouv.fr calendrier scolaire](https://data.education.gouv.fr/explore/dataset/fr-en-calendrier-scolaire/) | `fr-en-calendrier-scolaire`, Opendatasoft Explore API v2.1 | Official open school calendar; transformed to deterministic Zone A/B/C flags. |
 | City weights | [INSEE legal populations 2022](https://www.insee.fr/fr/statistiques/8290591) | Municipal population, ten major metropolitan-France communes | An auditable urban-demand proxy, not a complete national population model. |
 
 Detailed source contracts and limitations are in `docs/`.
@@ -109,15 +110,12 @@ Feature generation infers the observed demand cadence, so consolidated 30-minute
 To backfill a continuous multi-season training set, use a bounded consolidated demand window and the matching historical weather window:
 
 ```powershell
-python -m scripts.fetch_historical --start 2024-01-01 --end 2025-01-01 --output data/processed/eco2mix_historical_2024_clean.parquet
-python -m scripts.fetch_weather --start 2024-01-01 --end 2024-12-31 --output data/processed/weather_national_2024.parquet --joined-output data/processed/energy_weather_2024.parquet --strict
-python -m scripts.build_features --start 2024-01-01 --end 2025-01-01 --weather data/processed/weather_national_2024.parquet --min-continuous-hours 168
-python -m scripts.train_demand_model
-python -m scripts.evaluate_demand_model
-python -m scripts.backtest_baselines --start 2024-01-01 --end 2025-01-01
+python -m scripts.backfill_multiyear --start-year 2019 --end-year 2025 --strict-weather --train --evaluate
 ```
 
-See `docs/demand_model.md` for features, split assumptions, artifact format, limitations, and interpretation guidance. Model performance depends on obtaining a sufficiently long, continuous historical demand and weather dataset; short cached slices can train a smoke-test model but must not be read as evidence of forecasting skill.
+The command fetches each consolidated éCO2mix year separately to preserve raw ODRÉ cache snapshots, upserts the clean rows into the existing year/month Parquet store, rebuilds weather features on the actual stored energy timestamps, caches the official school calendar, generates supervised features, and optionally trains/evaluates the model. Use `--start-year 2018 --end-year 2025` for a longer window when the external services and local runtime can handle the fetch.
+
+See `docs/demand_model.md` for features, split assumptions, artifact format, limitations, and interpretation guidance. Model performance depends on obtaining a sufficiently long, continuous historical demand, weather, and calendar dataset; short cached slices can train a smoke-test model but must not be read as evidence of forecasting skill.
 
 ## Grid mood
 

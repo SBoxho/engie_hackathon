@@ -67,6 +67,10 @@ class Settings:
         return self.processed_dir / "weather_national.parquet"
 
     @property
+    def school_calendar_path(self) -> Path:
+        return self.processed_dir / "school_calendar.parquet"
+
+    @property
     def joined_features_path(self) -> Path:
         return self.processed_dir / "energy_weather.parquet"
 

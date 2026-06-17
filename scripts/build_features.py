@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     source.add_argument("--input", type=Path, help="Compatibility parquet, CSV, or JSON demand file")
     source.add_argument("--store-root", type=Path, help="Year/month partitioned processed eco2mix store")
     parser.add_argument("--weather", type=Path, default=settings.weather_features_path)
+    parser.add_argument("--school-calendar", type=Path, default=settings.school_calendar_path)
     parser.add_argument("--output", type=Path, default=settings.processed_dir / "demand_model" / "features.parquet")
     parser.add_argument("--metadata-output", type=Path, default=settings.processed_dir / "demand_model" / "feature_metadata.json")
     parser.add_argument("--start", help="Inclusive ISO-8601 store read boundary")
@@ -46,9 +47,11 @@ def main() -> int:
         regions=args.regions or ["France"],
     )
     weather = pd.read_parquet(args.weather) if args.weather.exists() else None
+    school_calendar = pd.read_parquet(args.school_calendar) if args.school_calendar.exists() else None
     features, metadata = build_feature_frame(
         energy,
         weather=weather,
+        school_calendar=school_calendar,
         config=FeatureConfig(
             min_continuous_hours=args.min_continuous_hours,
             cadence_minutes=args.cadence_minutes,
