@@ -23,7 +23,8 @@ def test_upsert_is_partitioned_idempotent_and_last_write_wins(tmp_path):
     first = rows("2026-01-31T23:45Z", "2026-02-01T00:00Z")
     result = store.upsert(first)
     assert result.inserted_rows == 2
-    assert set(result.partitions_written) == {"year=2026\\month=01", "year=2026\\month=02"}
+    partitions = {partition.replace(os.sep, "/") for partition in result.partitions_written}
+    assert partitions == {"year=2026/month=01", "year=2026/month=02"}
 
     replacement = first.iloc[[1]].copy()
     replacement["consumption_mw"] = 99_999
