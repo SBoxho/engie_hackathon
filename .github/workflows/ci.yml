@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests and app smoke check
+    runs-on: ubuntu-latest
+    env:
+      APP_MODE: demo
+      DEMO_ALLOW_EXTERNAL_API: "0"
+      PYTHONUTF8: "1"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Compile Python modules
+        run: python -m compileall app src scripts
+
+      - name: Streamlit homepage smoke test
+        run: |
+          python - <<'PY'
+          from streamlit.testing.v1 import AppTest
+
+          app = AppTest.from_file("app/main.py")
+          app.run(timeout=45)
+
+          if app.exception:
+              for exception in app.exception:
+                  print(exception.value)
+              raise SystemExit("Streamlit homepage raised exceptions")
+
+          text = "\n".join(
+              str(element.value)
+              for collection in (app.markdown, app.caption, app.info, app.warning)
+              for element in collection
+          )
+          required_phrases = [
+              "Observe, understand, act",
+              "Why it matters",
+              "RTE / ODRÉ",
+              "Open-Meteo",
+              "ADEME",
+              "data.gouv.fr",
+              "Built for the hackathon",
+          ]
+          missing = [phrase for phrase in required_phrases if phrase not in text]
+          if missing:
+              raise SystemExit(f"Missing homepage demo copy: {missing}")
+          PY
+
+      - name: Run tests
+        run: python -m pytest
