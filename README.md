@@ -70,13 +70,15 @@ The exporter writes only small safe artifacts to `demo_data/`: a 7-14 day energy
 
 ### Streamlit Community Cloud
 
-1. Push this repository to GitHub with `demo_data/`, `.streamlit/config.toml`, `requirements.txt`, and `app/main.py` committed.
+1. Push this repository to GitHub with `demo_data/`, `.streamlit/config.toml`, `requirements.txt`, `runtime.txt`, and `app/main.py` committed.
 2. In Streamlit Community Cloud, create a new app from the GitHub repository.
-3. Set the main file path to:
+3. Set the main file path to exactly:
 
 ```text
 app/main.py
 ```
+
+Do not set `run_app.py` as the hosted entrypoint. Streamlit Cloud already runs the selected file with `streamlit run`; `run_app.py` is only a local convenience wrapper for `python run_app.py`.
 
 4. Set environment variables or app secrets:
 
@@ -130,7 +132,8 @@ ENERGY_PULSE_HISTORY_HOURS=72
 |---|---|
 | App says demo energy sample is unavailable | Commit or regenerate `demo_data/energy_recent.parquet` with `python -m scripts.export_demo_bundle`. |
 | Sidebar health shows required artifacts missing | Verify `demo_data/manifest.json`, `quality_report.json`, `baseline_backtest.json`, `demand_model_evaluation.json`, and `mood_calibration.json` are in the repository. |
-| Streamlit Cloud fails during dependency install | Use `requirements.txt`, not `requirements-dev.txt`; the latter is only for local tests and training. |
+| Streamlit Cloud fails during dependency install | Use `requirements.txt`, not `requirements-dev.txt`; keep `runtime.txt` committed so the hosted Python version stays on 3.12. |
+| Streamlit Cloud was configured with `run_app.py` | Change the app's main file path to `app/main.py`, then reboot or redeploy. |
 | Hosted app unexpectedly calls APIs | Set `APP_MODE=demo` and `DEMO_ALLOW_EXTERNAL_API=0`, then clear Streamlit's cache or redeploy. |
 | Demand-model page has no predictions | Refresh the demo bundle after creating `data/processed/demand_model/evaluation.json`. The public demo does not require a `.pkl` model file. |
 | Live mode has no data | Run `python -m scripts.update_data --hours 72` locally, or switch back to `APP_MODE=demo` for public judging. |
