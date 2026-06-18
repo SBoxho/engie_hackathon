@@ -275,7 +275,19 @@ def prepare_regional_snapshot(raw: pd.DataFrame) -> pd.DataFrame:
     clean["region_code"] = clean["region_code"].astype(str)
     clean["region_display"] = clean["region_code"].map(REGION_NAMES).fillna(clean["region"])
     clean = clean.sort_values("timestamp").drop_duplicates("region_code", keep="last")
-    clean["demand_pressure"] = clean["consumption_mw"] / clean["consumption_mw"].max()
+    peak_demand = clean["consumption_mw"].max()
+    total_demand = clean["consumption_mw"].sum()
+    clean["demand_pressure"] = clean["consumption_mw"] / peak_demand if peak_demand else 0
+    clean["national_demand_share"] = clean["consumption_mw"] / total_demand if total_demand else 0
+    clean["regional_balance_mw"] = clean["total_production_mw"] - clean["consumption_mw"]
+    clean["balance_ratio"] = clean["regional_balance_mw"] / clean["consumption_mw"].where(clean["consumption_mw"] > 0)
+    clean["demand_rank"] = clean["consumption_mw"].rank(method="min", ascending=False).astype(int)
+    clean["renewable_rank"] = clean["renewable_share"].rank(method="min", ascending=False).astype(int)
+    clean["pressure_band"] = pd.cut(
+        clean["demand_pressure"],
+        bins=[-0.01, 0.55, 0.75, 0.88, 1.01],
+        labels=["Light", "Visible", "Elevated", "Peak"],
+    ).astype(str)
     return clean.sort_values("region_display").reset_index(drop=True)
 
 
