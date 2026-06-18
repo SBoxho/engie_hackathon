@@ -61,6 +61,8 @@ def regional_demand_choropleth(
         demand_label=frame["consumption_mw"].map(lambda value: f"{value:,.0f} MW"),
         renewable_label=frame["renewable_share"].map(lambda value: f"{value:.0%}"),
         production_label=frame["total_production_mw"].map(lambda value: f"{value:,.0f} MW"),
+        balance_label=frame["regional_balance_mw"].map(lambda value: f"{value:+,.0f} MW"),
+        share_label=frame["national_demand_share"].map(lambda value: f"{value:.1%}"),
     )
     fig = go.Figure(
         go.Choropleth(
@@ -85,13 +87,23 @@ def regional_demand_choropleth(
                 len=0.72,
             ),
             customdata=hover[
-                ["region_display", "demand_label", "production_label", "renewable_label"]
+                [
+                    "region_display",
+                    "demand_label",
+                    "production_label",
+                    "renewable_label",
+                    "balance_label",
+                    "share_label",
+                    "pressure_band",
+                ]
             ],
             hovertemplate=(
                 "<b>%{customdata[0]}</b><br>"
-                "Demand: %{customdata[1]}<br>"
+                "Demand: %{customdata[1]} (%{customdata[5]} of covered demand)<br>"
                 "Production: %{customdata[2]}<br>"
-                "Renewable share: %{customdata[3]}<extra></extra>"
+                "Renewable share: %{customdata[3]}<br>"
+                "Local balance: %{customdata[4]}<br>"
+                "Pressure band: %{customdata[6]}<extra></extra>"
             ),
         )
     )
@@ -117,4 +129,43 @@ def regional_demand_choropleth(
             ),
         )
     )
+    return fig
+
+
+def regional_comparison_bars(frame: pd.DataFrame, selected_code: str | None = None) -> go.Figure:
+    """Rank regions by demand while exposing renewable share and local balance."""
+    top = frame.sort_values("consumption_mw", ascending=True).tail(8).copy()
+    colors = ["#38bdf8" if code != selected_code else "#facc15" for code in top["region_code"]]
+    hover = top.assign(
+        demand_label=top["consumption_mw"].map(lambda value: f"{value:,.0f} MW"),
+        renewable_label=top["renewable_share"].map(lambda value: f"{value:.0%}"),
+        balance_label=top["regional_balance_mw"].map(lambda value: f"{value:+,.0f} MW"),
+        share_label=top["national_demand_share"].map(lambda value: f"{value:.1%}"),
+    )
+    fig = go.Figure(
+        go.Bar(
+            x=hover["consumption_mw"],
+            y=hover["region_display"],
+            orientation="h",
+            marker=dict(color=colors, line=dict(color="rgba(226,232,240,.38)", width=1)),
+            customdata=hover[["demand_label", "renewable_label", "balance_label", "share_label", "pressure_band"]],
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "Demand: %{customdata[0]}<br>"
+                "National demand share: %{customdata[3]}<br>"
+                "Renewable share: %{customdata[1]}<br>"
+                "Local production balance: %{customdata[2]}<br>"
+                "Pressure band: %{customdata[4]}<extra></extra>"
+            ),
+        )
+    )
+    fig.update_layout(
+        **dark_chart_layout(
+            height=330,
+            margin=dict(l=0, r=10, t=10, b=0),
+            xaxis_title="Demand (MW)",
+            yaxis_title=None,
+        )
+    )
+    fig.update_xaxes(showgrid=True, gridcolor="rgba(148,163,184,.14)")
     return fig

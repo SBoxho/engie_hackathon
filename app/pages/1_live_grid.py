@@ -8,7 +8,7 @@ import streamlit as st
 from app.components.cards import explanation_card, metric_card, section_header, status_badge, viz_note
 from app.components.charts import MIX_COLUMNS
 from app.components.layout import apply_theme
-from app.components.regional_map import regional_demand_choropleth
+from app.components.regional_map import regional_comparison_bars, regional_demand_choropleth
 from src.config import settings
 from src.demo_mode import external_api_enabled, mode_badge_color
 from src.data_sources.rte_eco2mix_regional import (
@@ -125,10 +125,10 @@ def interpretation(row: pd.Series, frame: pd.DataFrame) -> tuple[str, str]:
     return title, detail
 
 
-st.markdown('<div class="ep-eyebrow">Regional electricity map</div>', unsafe_allow_html=True)
-st.markdown('<div class="ep-hero">Live grid detail</div>', unsafe_allow_html=True)
+st.markdown('<div class="ep-eyebrow">Regional evidence layer</div>', unsafe_allow_html=True)
+st.markdown('<div class="ep-hero">Regional pressure reveal</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="ep-subtitle">Regional demand pressure and production mix from RTE eco2mix, with an offline demo fallback.</div>',
+    '<div class="ep-subtitle">A France-first supporting view: where national demand, renewable availability, and local production pressure are concentrated right now.</div>',
     unsafe_allow_html=True,
 )
 
@@ -143,18 +143,28 @@ latest_ts = regional["timestamp"].max()
 local_ts = latest_ts.tz_convert(settings.timezone) if latest_ts.tzinfo else latest_ts
 peak_region = regional.loc[regional["consumption_mw"].idxmax()]
 renewable_region = regional.loc[regional["renewable_share"].idxmax()]
+import_region = regional.loc[regional["regional_balance_mw"].idxmin()]
+covered_regions = len(regional)
+missing_regions = max(0, len(regions_geojson.get("features", [])) - covered_regions)
 
 section_header(
-    "Map",
+    "Supporting evidence",
     "Regional demand pressure",
-    "Color shows each region's demand relative to the highest regional demand in the current snapshot.",
+    "Color shows each region's demand relative to the current regional peak, so the national story can be grounded in where load and mix pressure are actually visible.",
+)
+
+explanation_card(
+    "What this adds to the national story",
+    "The forecast page explains the national direction; this regional layer shows whether pressure is concentrated in a few load centres, softened by renewable-rich regions, or exposed by local production shortfalls. It is evidence, not a separate forecast pipeline.",
+    label="France-first context",
+    status="info",
 )
 
 left, right = st.columns([1.65, 1], gap="large")
 with left:
     viz_note(
         "Regional pressure map",
-        "This map compares regions against the current regional peak. Use the labels and hover details to discuss demand, production, and renewable share without relying only on color.",
+        "Hover or click a region to connect national pressure to three concrete signals: local demand, renewable share, and production balance.",
         source="RTE / ODRE + data.gouv.fr",
     )
     event = st.plotly_chart(
@@ -188,14 +198,23 @@ with right:
     metric_card(
         "Demand",
         format_mw(float(selected["consumption_mw"])),
-        f"{float(selected['demand_pressure']):.0%} of the current regional peak.",
+        f"Rank #{int(selected['demand_rank'])}; {float(selected['national_demand_share']):.1%} of covered regional demand.",
         icon="kW",
+        status=str(selected["pressure_band"]),
     )
     metric_card(
-        "Production",
-        format_mw(float(selected["total_production_mw"])),
-        mix_sentence(selected),
-        icon="Mix",
+        "Renewable share",
+        f"{float(selected['renewable_share']):.0%}",
+        f"Rank #{int(selected['renewable_rank'])}; {mix_sentence(selected)}",
+        icon="RES",
+    )
+    balance = float(selected["regional_balance_mw"])
+    metric_card(
+        "Local balance",
+        f"{balance:+,.0f} MW",
+        "Positive means measured regional production exceeds local demand; negative means the region leans on the wider grid.",
+        icon="Grid",
+        status="watch" if balance < 0 else "good",
     )
     explanation_card(
         title,
@@ -203,6 +222,9 @@ with right:
         label=str(selected["region_display"]),
         status="watch" if float(selected["demand_pressure"]) >= 0.82 else "info",
     )
+
+section_header("Compare", "Fast regional readout", "The top demand regions are highlighted for quick comparison; the selected region is shown in yellow.")
+st.plotly_chart(regional_comparison_bars(regional, st.session_state.get("selected_region_code")), width="stretch")
 
 section_header("Snapshot", "Regional highlights")
 cols = st.columns(4)
@@ -224,10 +246,16 @@ with cols[2]:
     )
 with cols[3]:
     metric_card(
-        "Coverage",
-        f"{len(regional)} regions",
-        "Live or fallback regional records joined to region geometry.",
-        icon="Map",
+        "Grid dependency",
+        str(import_region["region_display"]),
+        f"Largest local shortfall: {float(import_region['regional_balance_mw']):+,.0f} MW.",
+        icon="Grid",
+        status="watch",
+    )
+
+if missing_regions:
+    st.warning(
+        f"Regional data is partially available for this snapshot: {covered_regions} regions are covered and {missing_regions} map regions have no live row. Demo stability is preserved by keeping the available rows and labelled fallbacks."
     )
 
 with st.expander("Regional values", expanded=False):
@@ -239,6 +267,9 @@ with st.expander("Regional values", expanded=False):
             "renewable_share",
             "co2_intensity_g_per_kwh",
             "demand_pressure",
+            "national_demand_share",
+            "regional_balance_mw",
+            "pressure_band",
         ]
     ].rename(
         columns={
@@ -248,6 +279,9 @@ with st.expander("Regional values", expanded=False):
             "renewable_share": "Renewable share",
             "co2_intensity_g_per_kwh": "CO2 g/kWh",
             "demand_pressure": "Demand pressure",
+            "national_demand_share": "Covered demand share",
+            "regional_balance_mw": "Local balance MW",
+            "pressure_band": "Pressure band",
         }
     )
     st.dataframe(display, width="stretch", hide_index=True)
