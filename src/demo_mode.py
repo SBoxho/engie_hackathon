@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
+from src.artifact_contract import read_json_object
 from src.config import settings
 
 
@@ -45,13 +45,8 @@ def read_demo_parquet(path: Path) -> pd.DataFrame:
 
 
 def read_demo_json(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        return {}
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError, json.JSONDecodeError):
-        return {}
-    if not isinstance(payload, dict):
+    payload, error = read_json_object(path)
+    if error:
         return {}
     return _shift_demo_json_dates(payload)
 

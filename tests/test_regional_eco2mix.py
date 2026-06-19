@@ -83,6 +83,8 @@ def test_prepare_regional_snapshot_adds_codes_and_pressure():
     assert len(frame) == 2
     assert set(snapshot["region_code"]) == {"11", "53"}
     assert snapshot["demand_pressure"].max() == 1
+    assert snapshot["national_demand_share"].sum() == pytest.approx(1)
+    assert set(["regional_balance_mw", "demand_rank", "renewable_rank", "pressure_band"]).issubset(snapshot.columns)
     assert snapshot["region_display"].notna().all()
 
 
