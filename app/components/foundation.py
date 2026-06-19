@@ -149,14 +149,32 @@ def render_context_bar(
     twin: TwinResponse | None,
     current_state: CurrentStateResponse | None,
     timezone_name: str,
+    weather: dict[str, Any] | None = None,
+    hide_replay_badge: bool = False,
+    hide_fallback_badge: bool = False,
 ) -> None:
     last_update = _last_update(twin, current_state)
     selected_time = state.selected_timestamp or _selected_time(twin, current_state)
     mode_label = _mode_label(state.mode)
     scope = REGION_NAMES.get(state.selected_region, state.selected_region)
     provenance_kinds = provenance_kinds_from_twin(twin) if twin is not None else provenance_kinds_from_current_state(current_state)
+    if hide_replay_badge:
+        # The "Demo context" mode label already conveys replay status, so the
+        # extra Replay pill is redundant on pages that opt in to suppression.
+        provenance_kinds = [kind for kind in provenance_kinds if kind != "replay"]
+    if hide_fallback_badge:
+        # Pages that already surface fallback context inline (e.g. per-card
+        # provenance badges) can suppress the bar-level Fallback pill to keep
+        # the header focused on the forecast.
+        provenance_kinds = [kind for kind in provenance_kinds if kind != "fallback"]
     badges = "".join(provenance_badge_html(kind) for kind in provenance_kinds)
     age = _age_text(current_state)
+    time_label, time_value, time_sublabel = _context_time_slot(
+        selected_time, weather, timezone_name=timezone_name
+    )
+    time_sublabel_html = (
+        f"<small>{html.escape(time_sublabel)}</small>" if time_sublabel else ""
+    )
     st.markdown(
         f"""
         <div class="ep-context-bar" aria-label="Application context">
@@ -164,13 +182,51 @@ def render_context_bar(
             <div class="ep-context-mode">{html.escape(mode_label)}</div>
           </div>
           <div class="ep-context-item"><span>Scope</span><strong>{html.escape(scope)}</strong></div>
-          <div class="ep-context-item"><span>Selected time</span><strong>{html.escape(format_timestamp(selected_time, timezone_name=timezone_name))}</strong></div>
+          <div class="ep-context-item"><span>{html.escape(time_label)}</span><strong>{html.escape(time_value)}</strong>{time_sublabel_html}</div>
           <div class="ep-context-item"><span>Last update</span><strong>{html.escape(format_timestamp(last_update, timezone_name=timezone_name))}</strong><small>{html.escape(age)}</small></div>
           <div class="ep-context-badges">{badges}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
+
+def _context_time_slot(
+    selected_time: Any,
+    weather: dict[str, Any] | None,
+    *,
+    timezone_name: str,
+) -> tuple[str, str, str]:
+    """Decide the label/value/sublabel for the selected-time slot.
+
+    When a live weather payload is present, the slot is repurposed to
+    surface current conditions (the selected timestamp moves into the
+    sublabel so it stays visible). Otherwise the original behavior is
+    preserved exactly.
+    """
+    timestamp_text = format_timestamp(selected_time, timezone_name=timezone_name)
+    if not weather:
+        return "Selected time", timestamp_text, ""
+    temp = weather.get("temperature_c")
+    wind = weather.get("wind_kmh")
+    if temp is None and wind is None:
+        return "Selected time", timestamp_text, ""
+    parts: list[str] = []
+    if temp is not None:
+        parts.append(f"{float(temp):.0f} °C")
+    if wind is not None:
+        parts.append(f"wind {float(wind):.0f} km/h")
+    weather_text = ", ".join(parts)
+    is_live = bool(weather.get("is_live"))
+    location = weather.get("location") or "Paris"
+    sub_bits: list[str] = []
+    if is_live:
+        source = weather.get("source") or "Open-Meteo"
+        sub_bits.append(f"Live · {location} · {source}")
+    elif location:
+        sub_bits.append(location)
+    sub_bits.append(f"selected {timestamp_text}")
+    return "Current weather", weather_text, " · ".join(sub_bits)
 
 
 def notices_from_contracts(twin: TwinResponse | None, current_state: CurrentStateResponse | None) -> list[TrustNotice]:

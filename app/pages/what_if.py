@@ -192,7 +192,13 @@ render_public_header(
     "Build one visual experiment and compare baseline demand, system response, regional deltas, and limits.",
     state.mode.value.upper(),
 )
-render_context_bar(state, twin=app_context.twin, current_state=app_context.current_state, timezone_name=settings.timezone)
+render_context_bar(
+    state,
+    twin=app_context.twin,
+    current_state=app_context.current_state,
+    timezone_name=settings.timezone,
+    hide_replay_badge=True,
+)
 render_trust_notices(
     notice
     for notice in notices_from_contracts(app_context.twin, app_context.current_state)
@@ -570,7 +576,7 @@ if changed_table.empty:
 else:
     st.dataframe(changed_table, width="stretch", hide_index=True)
 
-with st.expander("Assumptions and limitations", expanded=True):
+with st.expander("Assumptions and limitations", expanded=False):
     st.markdown("**Model sensitivity, not causal proof.**")
     st.write("This is an educational scenario estimate, not an operator dispatch forecast.")
     st.markdown("**Scenario API assumptions**")

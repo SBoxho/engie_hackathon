@@ -546,6 +546,46 @@ def generation_mix_rows(snapshot: TwinSnapshot | None) -> pd.DataFrame:
     return pd.DataFrame.from_records(rows)
 
 
+def weather_for_hour(
+    forecast_frame: pd.DataFrame | None,
+    target: datetime | pd.Timestamp | None,
+) -> dict[str, Any] | None:
+    """Pick the hourly Open-Meteo forecast row closest to ``target``.
+
+    Returns a payload shaped like :func:`app.data_loader.load_live_current_weather`
+    so callers can feed it into ``current_weather_summary`` without branching on
+    shape. Returns ``None`` when the frame is empty or the target is missing.
+    """
+    if forecast_frame is None or forecast_frame.empty or target is None:
+        return None
+    if "timestamp" not in forecast_frame:
+        return None
+    timestamps = pd.to_datetime(forecast_frame["timestamp"], utc=True, errors="coerce")
+    valid = forecast_frame.assign(timestamp=timestamps).dropna(subset=["timestamp"])
+    if valid.empty:
+        return None
+    target_ts = _as_utc(target)
+    idx = (valid["timestamp"] - target_ts).abs().idxmin()
+    row = valid.loc[idx]
+
+    def _maybe_float(value: Any) -> float | None:
+        if value is None or pd.isna(value):
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    return {
+        "temperature_c": _maybe_float(row.get("temperature_c")),
+        "wind_kmh": _maybe_float(row.get("wind_kmh")),
+        "cloud_pct": _maybe_float(row.get("cloud_pct")),
+        "observed_at": pd.Timestamp(row["timestamp"]).isoformat(),
+        "location": str(row.get("location") or "Paris"),
+        "source": str(row.get("source") or "Open-Meteo"),
+    }
+
+
 def forecast_display_table(forecast: pd.DataFrame, *, timezone_name: str = "Europe/Paris") -> pd.DataFrame:
     if forecast.empty:
         return pd.DataFrame()

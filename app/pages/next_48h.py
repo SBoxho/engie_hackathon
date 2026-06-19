@@ -15,6 +15,7 @@ from app.components.foundation import (
     responsive_columns,
     term_tooltip_html,
 )
+from app.components.now_dashboard import current_weather_summary
 from app.components.public import (
     about_project_drawer,
     forecast_chart,
@@ -23,6 +24,7 @@ from app.components.public import (
     selected_location,
 )
 from app.components.regional_map import has_meaningful_anomaly_signal, regional_anomaly_choropleth
+from app.data_loader import load_live_current_weather, load_live_weather_forecast
 from app.formatting import (
     format_carbon,
     format_gw,
@@ -48,6 +50,7 @@ from app.next48h_view import (
     selected_timestamp_from_chart_event,
     selected_twin_snapshot,
     twin_aligned_to_reference,
+    weather_for_hour,
 )
 from app.state import (
     mode_for_page,
@@ -125,6 +128,7 @@ snapshot = build_grid_snapshot(
     source_label=context["national_source"],
     timezone=settings.timezone,
 )
+live_weather = current_weather_summary(load_live_current_weather(), snapshot.weather)
 legacy_points = build_forecast_points(
     energy,
     model_payload=context["model_payload"],
@@ -161,7 +165,15 @@ render_public_header(
     "Demand range, better usage windows, confidence, and future regional context for the next two days.",
     state.mode.value.upper(),
 )
-render_context_bar(state, twin=aligned_twin, current_state=app_context.current_state, timezone_name=settings.timezone)
+render_context_bar(
+    state,
+    twin=aligned_twin,
+    current_state=app_context.current_state,
+    timezone_name=settings.timezone,
+    weather=live_weather,
+    hide_replay_badge=True,
+    hide_fallback_badge=True,
+)
 render_trust_notices(
     notice
     for notice in notices_from_contracts(aligned_twin, app_context.current_state)
@@ -312,17 +324,54 @@ explanation_card(
     provenance="modelled",
 )
 
+# Build a single weather card that replaces the placeholder "Weather
+# disagreement" factor: hourly forecast when available, otherwise live
+# current weather, otherwise the bundled snapshot. Loaded once so the
+# fallback chain is evaluated before the render loop reaches the slot.
+weather_forecast_frame = load_live_weather_forecast()
+forecast_weather_payload = weather_for_hour(weather_forecast_frame, selected_point.timestamp)
+live_weather_payload = load_live_current_weather() if forecast_weather_payload is None else None
+weather_summary = current_weather_summary(
+    forecast_weather_payload or live_weather_payload,
+    snapshot.weather,
+)
+weather_detail = str(weather_summary.get("detail", "Weather context is unavailable."))
+weather_location = weather_summary.get("location") or "Paris"
+weather_source = weather_summary.get("source") or "Open-Meteo"
+if forecast_weather_payload is not None:
+    weather_label = f"Forecast at {_local_hour_label(selected_point.timestamp)}"
+    weather_detail = f"{weather_detail} Hourly forecast · {weather_location} · {weather_source}."
+    weather_provenance = "modelled"
+elif live_weather_payload is not None:
+    weather_label = "Live weather (now)"
+    weather_detail = f"{weather_detail} Live reading · {weather_location} · {weather_source}."
+    weather_provenance = "observed"
+else:
+    weather_label = "Bundled weather snapshot"
+    weather_provenance = "fallback"
+
 section_header("Confidence", "What supports this forecast?")
 factor_cols = st.columns(3)
 for index, factor in enumerate(selected_confidence.factors):
     with factor_cols[index % len(factor_cols)]:
-        explanation_card(
-            factor.value,
-            factor.detail,
-            label=factor.name,
-            status=factor.status,
-            provenance="modelled" if factor.status != "unknown" else "unavailable",
-        )
+        if factor.name == "Weather disagreement":
+            # Reuse the placeholder slot for the real weather context so the
+            # section shows a single, informative weather card.
+            explanation_card(
+                str(weather_summary.get("headline", "Weather unavailable")),
+                weather_detail,
+                label=weather_label,
+                status="info",
+                provenance=weather_provenance,
+            )
+        else:
+            explanation_card(
+                factor.value,
+                factor.detail,
+                label=factor.name,
+                status=factor.status,
+                provenance="modelled" if factor.status != "unknown" else "unavailable",
+            )
 
 section_header(
     "Future Regional Map",

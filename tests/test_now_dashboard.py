@@ -179,8 +179,11 @@ def test_now_page_e2e_hierarchy_and_copy(monkeypatch) -> None:
     assert not app.exception
     rendered = "\n".join(str(item.value) for item in app.markdown)
     assert "What is happening now?" in rendered
-    assert "Official EcoWatt signal" in rendered
-    assert "Modelled national balance context" in rendered
+    # The "Official EcoWatt signal" and "Modelled national balance context"
+    # status rows were intentionally removed from the Now page; the same
+    # information is summarized in the Drivers section's Eco/Gen cards.
+    assert "Official EcoWatt signal" not in rendered
+    assert "Modelled national balance context" not in rendered
     assert "Selectable demand ribbon" in rendered
     assert "Demand versus usual" in rendered
     assert "Selected-region context" in rendered

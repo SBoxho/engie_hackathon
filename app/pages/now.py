@@ -16,6 +16,7 @@ from app.components.foundation import (
 from app.components.now_dashboard import (
     build_current_state_map_frame,
     build_hero_summary,
+    current_weather_summary,
     fallback_map_frame,
     generation_mix_figure,
     render_carbon_context,
@@ -23,12 +24,12 @@ from app.components.now_dashboard import (
     render_hero_summary,
     render_forecast_point_ribbon,
     render_region_selector,
-    render_status_rows,
     render_selected_forecast_context,
     render_selected_region_panel,
     selected_forecast_point,
     selected_twin_snapshot,
 )
+from app.data_loader import load_live_current_weather
 from app.components.public import about_project_drawer, provenance_drawer, render_public_header, selected_location
 from app.components.regional_map import has_meaningful_anomaly_signal, regional_anomaly_choropleth
 from app.formatting import format_gw
@@ -92,15 +93,22 @@ hero = build_hero_summary(
     timezone_name=settings.timezone,
     forecast_points=forecast_points,
 )
+live_weather = current_weather_summary(load_live_current_weather(), snapshot.weather)
 render_public_header("NOW", "", state.mode.value.upper())
 render_hero_summary(hero)
-render_context_bar(state, twin=app_context.twin, current_state=app_context.current_state, timezone_name=settings.timezone)
+render_context_bar(
+    state,
+    twin=app_context.twin,
+    current_state=app_context.current_state,
+    timezone_name=settings.timezone,
+    weather=live_weather,
+    hide_replay_badge=True,
+)
 render_trust_notices(
     notice
     for notice in notices_from_contracts(app_context.twin, app_context.current_state)
     if notice.title not in {"Demo fixture mode", "Partial data"}
 )
-render_status_rows(app_context.current_state, selected_snapshot, timezone_name=settings.timezone)
 
 section_header(
     "Next 12 Hours",
@@ -152,7 +160,12 @@ with right:
     if selected_region_code != state.selected_region:
         persist_app_state(with_updates(state, selected_region=selected_region_code))
         st.rerun()
-    render_selected_region_panel(app_context.current_state, map_frame, state.selected_region)
+    render_selected_region_panel(
+        app_context.current_state,
+        map_frame,
+        state.selected_region,
+        hide_replay_badge=True,
+    )
 
 section_header("Drivers", "What is driving the signal?")
 st.markdown(
@@ -160,7 +173,13 @@ st.markdown(
     f'and {term_tooltip_html("local generation")}.</div>',
     unsafe_allow_html=True,
 )
-render_driver_cards(app_context.current_state, selected_snapshot, snapshot)
+render_driver_cards(
+    app_context.current_state,
+    selected_snapshot,
+    snapshot,
+    weather_override=live_weather,
+    hide_replay_badge=True,
+)
 
 section_header("Generation Mix", "Generation, demand, exchange, and carbon")
 viz_note(
@@ -180,7 +199,7 @@ if app_context.current_state is not None:
     )
 else:
     st.plotly_chart(generation_mix_figure(None, demand_mw=None, net_imports_mw=None), width="stretch")
-render_carbon_context(app_context.current_state, selected_snapshot)
+render_carbon_context(app_context.current_state, selected_snapshot, hide_replay_badge=True)
 
 about_project_drawer()
 provenance_drawer(

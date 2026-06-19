@@ -102,6 +102,103 @@ def load_weather(
     return weather.loc[weather["timestamp"].between(start, end)].copy()
 
 
+# Paris is used as the live "current weather" reference for the Now page:
+# a single Open-Meteo call (no API key) keeps the live-weather payload cheap
+# while remaining representative of the population-weighted demand center.
+_LIVE_WEATHER_LAT = 48.8566
+_LIVE_WEATHER_LON = 2.3522
+_LIVE_WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def load_live_current_weather() -> dict[str, Any] | None:
+    """Return Open-Meteo current weather for Paris, or None when unavailable.
+
+    Cached for 15 minutes. Open-Meteo is keyless and free, and current
+    weather is not replay-sensitive (unlike historical demand fixtures), so
+    we attempt the call even in demo mode — otherwise the page would show
+    the bundled winter parquet's temperature in mid-summer. On any network
+    or parse error we return None and callers fall back to the bundled
+    weather snapshot.
+    """
+    try:
+        import requests
+
+        response = requests.get(
+            _LIVE_WEATHER_URL,
+            params={
+                "latitude": _LIVE_WEATHER_LAT,
+                "longitude": _LIVE_WEATHER_LON,
+                "current": "temperature_2m,wind_speed_10m,cloud_cover",
+                "wind_speed_unit": "kmh",
+                "timezone": "UTC",
+            },
+            timeout=8,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:  # noqa: BLE001 — any failure means we fall back to bundled weather
+        return None
+    current = payload.get("current") or {}
+    if not current:
+        return None
+    return {
+        "temperature_c": current.get("temperature_2m"),
+        "wind_kmh": current.get("wind_speed_10m"),
+        "cloud_pct": current.get("cloud_cover"),
+        "observed_at": current.get("time"),
+        "location": "Paris",
+        "source": "Open-Meteo",
+    }
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def load_live_weather_forecast() -> pd.DataFrame:
+    """Return Open-Meteo hourly forecast for Paris over the next ~3 days.
+
+    Mirrors :func:`load_live_current_weather` but pulls the ``hourly`` block so
+    the Next 48H page can show selected-hour weather context next to the
+    confidence factors. Cached for 15 minutes; on any failure we return an
+    empty frame and callers fall back to live current weather or the bundled
+    snapshot.
+    """
+    try:
+        import requests
+
+        response = requests.get(
+            _LIVE_WEATHER_URL,
+            params={
+                "latitude": _LIVE_WEATHER_LAT,
+                "longitude": _LIVE_WEATHER_LON,
+                "hourly": "temperature_2m,wind_speed_10m,cloud_cover",
+                "wind_speed_unit": "kmh",
+                "timezone": "UTC",
+                "forecast_days": 3,
+            },
+            timeout=8,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:  # noqa: BLE001 — any failure falls back to live/bundled weather
+        return pd.DataFrame()
+    hourly = payload.get("hourly") or {}
+    times = hourly.get("time") or []
+    if not times:
+        return pd.DataFrame()
+    frame = pd.DataFrame(
+        {
+            "timestamp": pd.to_datetime(times, utc=True, errors="coerce"),
+            "temperature_c": hourly.get("temperature_2m"),
+            "wind_kmh": hourly.get("wind_speed_10m"),
+            "cloud_pct": hourly.get("cloud_cover"),
+        }
+    )
+    frame = frame.dropna(subset=["timestamp"]).reset_index(drop=True)
+    frame["location"] = "Paris"
+    frame["source"] = "Open-Meteo"
+    return frame
+
+
 @st.cache_data(ttl=900, show_spinner=False)
 def load_ecowatt(start: pd.Timestamp, end: pd.Timestamp) -> tuple[pd.DataFrame, str]:
     if settings.is_demo_mode and not external_api_enabled():
