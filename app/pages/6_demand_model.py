@@ -11,6 +11,7 @@ import streamlit as st
 from app.components.cards import explanation_card, horizon_forecast_card, message_box, section_header, viz_note
 from app.components.layout import apply_theme
 from src.config import settings
+from src.demo_mode import read_demo_json
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -30,7 +31,15 @@ EXPLANATION_FALLBACK = (
 
 @st.cache_data(show_spinner=False)
 def load_evaluation(path: str) -> dict:
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    evaluation_path = Path(path)
+    if settings.is_demo_mode:
+        try:
+            evaluation_path.relative_to(settings.demo_dir)
+        except ValueError:
+            pass
+        else:
+            return read_demo_json(evaluation_path)
+    return json.loads(evaluation_path.read_text(encoding="utf-8"))
 
 
 def format_mw(value: float | int | None) -> str:

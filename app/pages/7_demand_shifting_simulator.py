@@ -385,4 +385,4 @@ with st.expander("Transparent assumptions and scoring", expanded=False):
         "not a settlement, billing, or verified carbon accounting method."
     )
 
-st.link_button("Back to Energy Pulse France", "/")
+st.link_button("Back to public dashboard", "/")

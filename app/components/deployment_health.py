@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 
 from src.config import settings
-from src.demo_mode import external_api_enabled
+from src.demo_mode import external_api_enabled, read_demo_json
 
 
 @dataclass(frozen=True)
@@ -33,7 +33,15 @@ def _has_json(path: Path) -> tuple[bool, str]:
     if not path.exists():
         return False, "missing"
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        if settings.is_demo_mode:
+            try:
+                path.relative_to(settings.demo_dir)
+            except ValueError:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            else:
+                payload = read_demo_json(path)
+        else:
+            payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError, json.JSONDecodeError):
         return False, "unreadable"
     if isinstance(payload, dict):

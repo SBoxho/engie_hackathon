@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   test:
-    name: Tests and app smoke check
+    name: Verify repository
     runs-on: ubuntu-latest
     env:
       APP_MODE: demo
@@ -42,40 +42,5 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
 
-      - name: Compile Python modules
-        run: python -m compileall app src scripts
-
-      - name: Streamlit homepage smoke test
-        run: |
-          python - <<'PY'
-          from streamlit.testing.v1 import AppTest
-
-          app = AppTest.from_file("app/main.py")
-          app.run(timeout=45)
-
-          if app.exception:
-              for exception in app.exception:
-                  print(exception.value)
-              raise SystemExit("Streamlit homepage raised exceptions")
-
-          text = "\n".join(
-              str(element.value)
-              for collection in (app.markdown, app.caption, app.info, app.warning)
-              for element in collection
-          )
-          required_phrases = [
-              "Observe, understand, act",
-              "Why it matters",
-              "RTE / ODRÉ",
-              "Open-Meteo",
-              "ADEME",
-              "data.gouv.fr",
-              "Built for the hackathon",
-          ]
-          missing = [phrase for phrase in required_phrases if phrase not in text]
-          if missing:
-              raise SystemExit(f"Missing homepage demo copy: {missing}")
-          PY
-
-      - name: Run tests
-        run: python -m pytest
+      - name: Verify repository
+        run: python -m scripts.verify
