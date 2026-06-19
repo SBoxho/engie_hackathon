@@ -9,9 +9,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from app.components.cards import driver_card, explanation_card, metric_card, status_badge_html
+from app.components.cards import driver_card, explanation_card, metric_card
 from app.components.charts import COLORS, dark_chart_layout
-from app.components.foundation import provenance_badge_html, provenance_kind_for_source
+from app.components.foundation import provenance_kind_for_source
 from app.formatting import (
     UNAVAILABLE,
     format_age_seconds,
@@ -121,49 +121,6 @@ def render_hero_summary(summary: HeroSummary) -> None:
     )
 
 
-def render_status_rows(
-    current_state: CurrentStateResponse | None,
-    selected_snapshot: TwinSnapshot | None,
-    *,
-    timezone_name: str,
-) -> None:
-    official = _official_signal(current_state, selected_snapshot)
-    balance = _modelled_balance(current_state, selected_snapshot)
-    official_label, official_detail, official_status, official_source = _official_row_parts(official, timezone_name)
-    balance_label, balance_detail, balance_status = _balance_row_parts(balance)
-    st.markdown(
-        f"""
-        <div class="ep-status-row-wrap" aria-label="Official signal and app balance context rows">
-          <div class="ep-source-status-row">
-            <div>
-              <div class="ep-label">Official EcoWatt signal</div>
-              <div class="ep-title">{html.escape(official_label)}</div>
-              <div class="ep-detail">{html.escape(official_detail)}</div>
-            </div>
-            <div class="ep-status-actions">
-              {status_badge_html(official_status, official_status)}
-              {provenance_badge_html("official" if official is not None and _official_available(official) else "unavailable")}
-            </div>
-            <div class="ep-status-source">{html.escape(official_source)}</div>
-          </div>
-          <div class="ep-source-status-row ep-source-status-modelled">
-            <div>
-              <div class="ep-label">Modelled national balance context</div>
-              <div class="ep-title">{html.escape(balance_label)}</div>
-              <div class="ep-detail">{html.escape(balance_detail)}</div>
-            </div>
-            <div class="ep-status-actions">
-              {status_badge_html(balance_status, balance_status)}
-              {provenance_badge_html("modelled" if balance is not None else "unavailable")}
-            </div>
-            <div class="ep-status-source">Separate from EcoWatt; not an official warning.</div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 def render_next_12h_ribbon(
     twin: TwinResponse | None,
     selected: datetime | None,
@@ -254,6 +211,55 @@ def selected_forecast_point(
         target = target.tz_localize("UTC")
     target = target.tz_convert("UTC")
     return min(points, key=lambda point: abs(pd.Timestamp(point.timestamp).tz_convert("UTC") - target))
+
+
+def current_weather_summary(
+    live_payload: dict[str, Any] | None,
+    fallback: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Merge a live Open-Meteo current payload with the snapshot's fallback weather.
+
+    The live payload (when available) wins on raw values; the fallback supplies
+    the headline-classification text whenever we can compute one. Returns a dict
+    with at minimum ``headline`` and ``detail`` keys so downstream renderers
+    never have to None-check.
+    """
+    base = dict(fallback or {})
+    if live_payload:
+        for key in ("temperature_c", "wind_kmh", "cloud_pct"):
+            value = live_payload.get(key)
+            if value is not None:
+                base[key] = value
+        base["source"] = live_payload.get("source", base.get("source"))
+        base["location"] = live_payload.get("location", base.get("location"))
+        base["observed_at"] = live_payload.get("observed_at", base.get("observed_at"))
+        base["is_live"] = True
+    else:
+        base.setdefault("is_live", False)
+
+    temp = base.get("temperature_c")
+    wind = base.get("wind_kmh")
+    if temp is None and wind is None:
+        base.setdefault("headline", "Weather unavailable")
+        base.setdefault("detail", "Weather context is unavailable for this snapshot.")
+        return base
+
+    temp_value = 0.0 if temp is None else float(temp)
+    wind_value = 0.0 if wind is None else float(wind)
+    cloud_value = float(base.get("cloud_pct") or 0.0)
+    if temp_value <= 5:
+        base["headline"] = "Cold demand lift"
+    elif temp_value >= 27:
+        base["headline"] = "Heat demand lift"
+    elif wind_value >= 35:
+        base["headline"] = "Wind output context"
+    else:
+        base["headline"] = "Mild weather"
+    base["detail"] = f"{temp_value:.1f} °C, wind {wind_value:.0f} km/h, cloud {cloud_value:.0f}%."
+    base["temperature_c"] = temp_value
+    base["wind_kmh"] = wind_value
+    base["cloud_pct"] = cloud_value
+    return base
 
 
 def render_selected_forecast_context(point: ForecastPointView | None, *, timezone_name: str) -> None:
@@ -349,6 +355,8 @@ def render_selected_region_panel(
     current_state: CurrentStateResponse | None,
     map_frame: pd.DataFrame,
     selected_region: str,
+    *,
+    hide_replay_badge: bool = False,
 ) -> None:
     selected_row = _map_row(map_frame, selected_region)
     context = current_state.selected_region_context if current_state and current_state.region == selected_region else None
@@ -369,13 +377,14 @@ def render_selected_region_panel(
         if physical_balance is not None
         else f"Net flow {format_signed_mw(net_flow)}"
     )
+    provenance = _provenance_for_current_state(current_state, hide_replay=hide_replay_badge)
     metric_card(
         "Regional demand",
         format_mw(demand),
         demand_difference_text(anomaly_pct, already_percent=True),
         icon="Demand",
         status=_status_for_anomaly_pct(anomaly_pct),
-        provenance=_provenance_for_current_state(current_state),
+        provenance=provenance,
     )
     metric_card(
         "Local generation",
@@ -383,7 +392,7 @@ def render_selected_region_panel(
         "Generation measured in the region, within the connected French grid.",
         icon="Gen",
         status="info",
-        provenance=_provenance_for_current_state(current_state),
+        provenance=provenance,
     )
     metric_card(
         "Physical flow context",
@@ -391,7 +400,7 @@ def render_selected_region_panel(
         "Imports and exports are physical flow context when available.",
         icon="Flow",
         status="info",
-        provenance=_provenance_for_current_state(current_state),
+        provenance=provenance,
     )
     note = (
         context.connected_grid_note
@@ -411,6 +420,9 @@ def render_driver_cards(
     current_state: CurrentStateResponse | None,
     selected_snapshot: TwinSnapshot | None,
     snapshot: GridSnapshotView,
+    *,
+    weather_override: dict[str, Any] | None = None,
+    hide_replay_badge: bool = False,
 ) -> None:
     demand = _current_demand(current_state, snapshot)
     usual = _metric_value(current_state.national_context.demand.usual if current_state is not None else None)
@@ -418,14 +430,15 @@ def render_driver_cards(
     balance = _modelled_balance(current_state, selected_snapshot)
     official = _official_signal(current_state, selected_snapshot)
     generation_detail = _generation_exchange_driver_detail(current_state, selected_snapshot)
-    weather = snapshot.weather
+    weather = weather_override if weather_override is not None else snapshot.weather
+    weather_is_live = bool(weather_override and weather_override.get("is_live"))
     columns = st.columns(4)
     with columns[0]:
         driver_card(
             "Demand",
             demand_difference_text(anomaly, already_percent=True),
             f"France is using {format_gw(demand)}; usual for this context is {format_gw(usual)}.",
-            provenance=_provenance_for_current_state(current_state),
+            provenance=_provenance_for_current_state(current_state, hide_replay=hide_replay_badge),
         )
     with columns[1]:
         driver_card(
@@ -436,11 +449,23 @@ def render_driver_cards(
             provenance="modelled" if balance is not None else "unavailable",
         )
     with columns[2]:
+        weather_headline = str(weather.get("headline", "Weather unavailable"))
+        weather_detail = str(weather.get("detail", "Weather context is unavailable for this snapshot."))
+        if weather_is_live:
+            location = weather.get("location") or "Paris"
+            source = weather.get("source") or "Open-Meteo"
+            weather_detail = f"{weather_detail} Live reading · {location} · {source}."
+        if weather_is_live:
+            weather_provenance: str | None = "observed"
+        elif snapshot.mode == "REPLAY":
+            weather_provenance = None if hide_replay_badge else "replay"
+        else:
+            weather_provenance = "observed"
         driver_card(
             "Weather",
-            str(weather.get("headline", "Weather unavailable")),
-            str(weather.get("detail", "Weather context is unavailable for this snapshot.")),
-            provenance="replay" if snapshot.mode == "REPLAY" else "observed",
+            weather_headline,
+            weather_detail,
+            provenance=weather_provenance,
         )
     with columns[3]:
         driver_card(
@@ -547,15 +572,22 @@ def generation_mix_items(mix: CurrentGenerationMix | None) -> list[dict[str, Any
     return keep
 
 
-def render_carbon_context(current_state: CurrentStateResponse | None, selected_snapshot: TwinSnapshot | None) -> None:
+def render_carbon_context(
+    current_state: CurrentStateResponse | None,
+    selected_snapshot: TwinSnapshot | None,
+    *,
+    hide_replay_badge: bool = False,
+) -> None:
     carbon = None
-    provenance = "unavailable"
+    provenance: str | None = "unavailable"
     if selected_snapshot is not None and selected_snapshot.carbon_estimate is not None:
         carbon = selected_snapshot.carbon_estimate.intensity.value
         provenance = provenance_kind_for_source(selected_snapshot.carbon_estimate.source)
+        if hide_replay_badge and provenance == "replay":
+            provenance = None
     elif current_state is not None:
         carbon = current_state.national_context.carbon_estimate.estimate.value
-        provenance = _provenance_for_current_state(current_state)
+        provenance = _provenance_for_current_state(current_state, hide_replay=hide_replay_badge)
     metric_card(
         "Carbon context",
         format_carbon(carbon),
@@ -713,35 +745,6 @@ def _modelled_balance(
     return None
 
 
-def _official_row_parts(official: Any, timezone_name: str) -> tuple[str, str, str, str]:
-    if official is None:
-        return "EcoWatt unavailable", "No official signal is available in the current typed response.", "Unavailable", ""
-    title = _official_title(official)
-    detail = _official_detail(official)
-    time_value = getattr(official, "signal_time", None) or getattr(official, "timestamp", None)
-    if time_value is not None:
-        detail = f"{detail} Signal time: {format_timestamp(time_value, timezone_name=timezone_name)}."
-    status = _official_status(official)
-    raw_source = getattr(official, "source", "") or ""
-    source = str(getattr(raw_source, "name", raw_source))
-    return title, detail, status, source
-
-
-def _balance_row_parts(balance: Any | None) -> tuple[str, str, str]:
-    if balance is None:
-        return "Balance context unavailable", "The modelled balance context is unavailable for the selected hour.", "Unavailable"
-    label = _balance_label(balance)
-    margin = getattr(balance, "supply_margin", None)
-    imports = getattr(balance, "net_imports", None)
-    if margin is not None:
-        detail = f"Generation plus exchange leaves {format_signed_mw(_quantified_value(margin))} versus demand."
-    else:
-        detail = str(getattr(balance, "reason", "") or "Documented threshold context from demand and generation inputs.")
-    if imports is not None:
-        detail = f"{detail} {flow_context_text(_quantified_value(imports))}."
-    return label, detail, label
-
-
 def _official_title(official: Any | None) -> str:
     if official is None:
         return "EcoWatt unavailable"
@@ -888,11 +891,18 @@ def _status_for_anomaly_pct(value: float | None) -> str:
     return "watch" if abs(float(value)) < 15 else "high"
 
 
-def _provenance_for_current_state(current_state: CurrentStateResponse | None) -> str:
+def _provenance_for_current_state(
+    current_state: CurrentStateResponse | None,
+    *,
+    hide_replay: bool = False,
+) -> str | None:
     if current_state is None:
         return "unavailable"
     if current_state.operating_state == OperatingState.HISTORICAL_REPLAY:
-        return "replay"
+        # When the caller has already conveyed replay context elsewhere
+        # (e.g. the "Demo context" mode pill), omit the per-card badge to
+        # avoid repeating ourselves on every metric/driver tile.
+        return None if hide_replay else "replay"
     if current_state.operating_state in {
         OperatingState.SOURCE_UNAVAILABLE,
     }:

@@ -90,7 +90,7 @@ def restore_scenario_controls(
     default_region: str = "11",
 ) -> ScenarioControls:
     scenario_type = normalize_scenario_key(_first(query_params, "scenario") or default_scenario)
-    start = _bounded_int(_first(query_params, "start"), default=18, minimum=0, maximum=47)
+    start = _bounded_int(_first(query_params, "start"), default=12, minimum=0, maximum=47)
     duration = _bounded_int(_first(query_params, "duration"), default=_default_duration(scenario_type), minimum=1, maximum=48)
     end = min(start + duration, 48)
     if end <= start:
@@ -866,7 +866,7 @@ def _default_magnitude(scenario_type: str) -> float:
 
 
 def _default_duration(scenario_type: str) -> int:
-    return 12 if scenario_type == "ev_charging_shift" else 6
+    return 12
 
 
 def _first(values: Mapping[str, Any], key: str) -> str | None:
